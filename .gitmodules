@@ -1,0 +1,3 @@
+[submodule "src/nullinside-api"]
+	path = src/nullinside-api
+	url = https://github.com/nullinside-development-group/nullinside-api.git
