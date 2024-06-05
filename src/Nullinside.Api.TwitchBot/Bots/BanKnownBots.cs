@@ -114,7 +114,8 @@ public class BanKnownBots : ABotRule {
     }
 
     if (botsInChatCommanderRoot.Count != 0) {
-      await BanOnce(botProxy, db, user.TwitchId, botsInChatCommanderRoot.Select(b => (b.UserId, b.UserLogin)),
+      await BanOnce(botProxy, db, user.TwitchId,
+        botsInChatCommanderRoot.Select(b => (Id: b.UserId, Username: b.UserLogin)),
         "[Bot] Username on Known Bot List", stoppingToken);
     }
   }
@@ -126,7 +127,6 @@ public class BanKnownBots : ABotRule {
   private static async Task<ImmutableHashSet<string>?> GetTwitchInsightsBots() {
     var stopwatch = new Stopwatch();
     stopwatch.Start();
-    Console.WriteLine("Twitch Insights Started");
     // Reach out to the api and find out what bots are online.
     using var http = new HttpClient();
     HttpResponseMessage response = await http.GetAsync("https://api.twitchinsights.net/v1/bots/all");
@@ -157,8 +157,6 @@ public class BanKnownBots : ABotRule {
     liveBotsResponse = null;
     content = null;
     jsonString = null;
-
-    Console.WriteLine($"Twitch Insights Ended: {stopwatch.Elapsed.TotalSeconds}");
     return allBots;
   }
 
@@ -169,7 +167,6 @@ public class BanKnownBots : ABotRule {
   private static async Task<ImmutableHashSet<string>?> GetCommanderRootBots() {
     var stopwatch = new Stopwatch();
     stopwatch.Start();
-    Console.WriteLine("Commander Root Started");
     // Reach out to the api and find out what bots are online.
     using var http = new HttpClient();
     using HttpResponseMessage response =
@@ -196,7 +193,6 @@ public class BanKnownBots : ABotRule {
     liveBotsResponse = null;
     content = null;
     jsonString = null;
-    Console.WriteLine($"Commander Root Ended: {stopwatch.Elapsed.TotalSeconds}");
     return allBots;
   }
 }
