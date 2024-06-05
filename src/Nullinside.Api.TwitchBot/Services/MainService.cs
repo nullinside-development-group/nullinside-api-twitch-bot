@@ -74,6 +74,13 @@ public class MainService : BackgroundService {
             .Where(o => null != o)
             .ToArray()!;
 
+          {
+            using IServiceScope scope = _serviceScopeFactory.CreateAsyncScope();
+            foreach (IBotRule rule in botRules) {
+              rule.Log = scope.ServiceProvider.GetRequiredService<ILogger<IBotRule>>();
+            }
+          }
+
           await Main(stoppingToken);
         }
         catch (Exception ex) {
