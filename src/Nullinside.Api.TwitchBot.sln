@@ -18,6 +18,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Nullinside.Api.Common.AspNe
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Nullinside.Api.Model", "nullinside-api\src\Nullinside.Api.Model\Nullinside.Api.Model.csproj", "{C6BFDB55-3354-4DFD-A362-F1B007AA0C63}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Nullinside.Api", "nullinside-api\src\Nullinside.Api\Nullinside.Api.csproj", "{B82842B1-7FDA-4F93-B31E-07696A687381}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -40,5 +42,9 @@ Global
 		{C6BFDB55-3354-4DFD-A362-F1B007AA0C63}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{C6BFDB55-3354-4DFD-A362-F1B007AA0C63}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{C6BFDB55-3354-4DFD-A362-F1B007AA0C63}.Release|Any CPU.Build.0 = Release|Any CPU
+		{B82842B1-7FDA-4F93-B31E-07696A687381}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{B82842B1-7FDA-4F93-B31E-07696A687381}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{B82842B1-7FDA-4F93-B31E-07696A687381}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{B82842B1-7FDA-4F93-B31E-07696A687381}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 EndGlobal
