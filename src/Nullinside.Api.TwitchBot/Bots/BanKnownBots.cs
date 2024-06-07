@@ -11,6 +11,8 @@ using Nullinside.Api.TwitchBot.Model;
 
 using TwitchLib.Api.Helix.Models.Chat.GetChatters;
 
+using TwitchUserConfig = Nullinside.Api.Model.Ddl.TwitchUserConfig;
+
 namespace Nullinside.Api.TwitchBot.Bots;
 
 /// <summary>

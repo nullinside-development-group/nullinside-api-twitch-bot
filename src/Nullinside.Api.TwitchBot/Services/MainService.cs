@@ -42,6 +42,10 @@ public class MainService : BackgroundService {
   /// <param name="stoppingToken">The stopping token.</param>
   protected override Task ExecuteAsync(CancellationToken stoppingToken) {
     return Task.Run(async () => {
+#if DEBUG
+      return;
+#endif
+
       while (!stoppingToken.IsCancellationRequested) {
         try {
           {
@@ -95,6 +99,10 @@ public class MainService : BackgroundService {
   /// </summary>
   /// <param name="stoppingToken">The stopping token.</param>
   private async Task Main(CancellationToken stoppingToken) {
+#if DEBUG
+    return;
+#endif
+
     try {
       while (!stoppingToken.IsCancellationRequested) {
         bool didScan = false;
