@@ -113,9 +113,11 @@ public class MainService : BackgroundService {
           (from user in db.Users
             where !string.IsNullOrWhiteSpace(user.TwitchToken) &&
                   !string.IsNullOrWhiteSpace(user.TwitchRefreshToken) &&
+                  !user.IsBanned &&
                   user.TwitchTokenExpiration > DateTime.UtcNow
             select user)
           .Include(u => u.TwitchConfig)
+          .Where(u => null != u.TwitchConfig && u.TwitchConfig.Enabled)
           .AsNoTracking()
           .ToListAsync(stoppingToken);
 
