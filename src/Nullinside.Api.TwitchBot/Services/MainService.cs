@@ -113,6 +113,7 @@ public class MainService : BackgroundService {
           (from user in db.Users
             where !string.IsNullOrWhiteSpace(user.TwitchToken) &&
                   !string.IsNullOrWhiteSpace(user.TwitchRefreshToken) &&
+                  user.TwitchId != Constants.BotId &&
                   !user.IsBanned &&
                   user.TwitchTokenExpiration > DateTime.UtcNow
             select user)
