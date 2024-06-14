@@ -187,7 +187,7 @@ public class MainService : BackgroundService {
     TwitchApiProxy api = GetApi(user);
 
     // Refresh its token if necessary.
-    if (DateTime.UtcNow > user.TwitchTokenExpiration + TimeSpan.FromHours(1)) {
+    if (DateTime.UtcNow < user.TwitchTokenExpiration + TimeSpan.FromHours(1)) {
       if (await api.RefreshTokenAsync(stoppingToken)) {
         User? row = await db.Users.FirstOrDefaultAsync(u => u.Id == user.Id, stoppingToken);
         if (null == row) {
