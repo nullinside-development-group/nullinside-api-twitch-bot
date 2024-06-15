@@ -31,12 +31,11 @@ public abstract class ABotRule : IBotRule {
   /// <remarks>This should only be called if <see cref="ShouldRun" /> returns true.</remarks>
   /// <param name="user">The user.</param>
   /// <param name="config">The user's configuration.</param>
-  /// <param name="userProxy">The twitch api authenticated as the user we're scanning.</param>
   /// <param name="botProxy">The twitch api authenticated as the bot user.</param>
   /// <param name="db">The database.</param>
   /// <param name="stoppingToken">The cancellation token.</param>
   /// <returns>An asynchronous task.</returns>
-  public abstract Task Handle(User user, TwitchUserConfig config, TwitchApiProxy userProxy, TwitchApiProxy botProxy,
+  public abstract Task Handle(User user, TwitchUserConfig config, TwitchApiProxy botProxy,
     NullinsideContext db, CancellationToken stoppingToken = new());
 
   /// <summary>
