@@ -29,7 +29,7 @@ public static class Constants {
     "moobot", "wizebot", "bad_elbereth", "dixperbro",
     "pretzelrocks", "playwithviewersbot", "blerp",
     "sery_bot", "buttsbot", "songlistbot", "frostytoolsdotcom",
-    "kofistreambot", "lumiastream"
+    "kofistreambot", "lumiastream", "botrixoficial", "fossabot"
   };
 
   /// <summary>
