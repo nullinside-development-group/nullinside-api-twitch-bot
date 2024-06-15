@@ -29,7 +29,9 @@ public static class Constants {
     "moobot", "wizebot", "bad_elbereth", "dixperbro",
     "pretzelrocks", "playwithviewersbot", "blerp",
     "sery_bot", "buttsbot", "songlistbot", "frostytoolsdotcom",
-    "kofistreambot", "lumiastream", "botrixoficial", "fossabot"
+    "kofistreambot", "lumiastream", "botrixoficial", "fossabot",
+    "wzbot", "rainmaker", "streamstickers", "tangiabot", "dixperbot",
+    "trackerggbot", "creatisbot"
   };
 
   /// <summary>
