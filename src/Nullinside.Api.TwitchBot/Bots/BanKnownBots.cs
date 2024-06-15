@@ -67,12 +67,11 @@ public class BanKnownBots : ABotRule {
   /// </summary>
   /// <param name="user">The user.</param>
   /// <param name="config">The user's configuration.</param>
-  /// <param name="userProxy">The twitch api authenticated as the user we're scanning.</param>
   /// <param name="botProxy">The twitch api authenticated as the bot user.</param>
   /// <param name="db">The database.</param>
   /// <param name="stoppingToken">The cancellation token.</param>
-  public override async Task Handle(User user, TwitchUserConfig config, TwitchApiProxy userProxy,
-    TwitchApiProxy botProxy, NullinsideContext db, CancellationToken stoppingToken = new()) {
+  public override async Task Handle(User user, TwitchUserConfig config, TwitchApiProxy botProxy,
+    NullinsideContext db, CancellationToken stoppingToken = new()) {
     if (null == user.TwitchId) {
       return;
     }

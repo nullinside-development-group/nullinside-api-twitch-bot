@@ -111,11 +111,8 @@ public class MainService : BackgroundService {
 
         List<User>? users = await
           (from user in db.Users
-            where !string.IsNullOrWhiteSpace(user.TwitchToken) &&
-                  !string.IsNullOrWhiteSpace(user.TwitchRefreshToken) &&
-                  user.TwitchId != Constants.BotId &&
-                  !user.IsBanned &&
-                  user.TwitchTokenExpiration > DateTime.UtcNow
+            where user.TwitchId != Constants.BotId &&
+                  !user.IsBanned
             select user)
           .Include(u => u.TwitchConfig)
           .Where(u => null != u.TwitchConfig && u.TwitchConfig.Enabled)
@@ -135,9 +132,8 @@ public class MainService : BackgroundService {
           }
 
           // Get the API
-          TwitchApiProxy? userApi = await GetApiAndRefreshToken(user, db, stoppingToken);
           TwitchApiProxy? botApi = await GetApiAndRefreshToken(botUser, db, stoppingToken);
-          if (null == botRules || null == user.TwitchConfig || null == userApi || null == botApi) {
+          if (null == botRules || null == user.TwitchConfig || null == botApi) {
             continue;
           }
 
@@ -145,7 +141,7 @@ public class MainService : BackgroundService {
           foreach (IBotRule rule in botRules) {
             try {
               if (rule.ShouldRun(user, user.TwitchConfig)) {
-                await rule.Handle(user, user.TwitchConfig, userApi, botApi, db, stoppingToken);
+                await rule.Handle(user, user.TwitchConfig, botApi, db, stoppingToken);
               }
             }
             catch (Exception e) {
