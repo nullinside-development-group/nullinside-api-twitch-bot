@@ -13,11 +13,6 @@ namespace Nullinside.Api.TwitchBot.Bots;
 /// </summary>
 public abstract class ABotRule : IBotRule {
   /// <summary>
-  ///   The logger.
-  /// </summary>
-  public ILogger Log { get; set; } = null!;
-
-  /// <summary>
   ///   Determine if the rule is enabled in the configuration.
   /// </summary>
   /// <param name="user">The user.</param>

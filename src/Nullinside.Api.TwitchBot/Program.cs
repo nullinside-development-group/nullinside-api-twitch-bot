@@ -22,8 +22,11 @@ string? username = Environment.GetEnvironmentVariable("MYSQL_USERNAME");
 string? password = Environment.GetEnvironmentVariable("MYSQL_PASSWORD");
 builder.Services.AddDbContext<NullinsideContext>(optionsBuilder =>
   optionsBuilder.UseMySQL(
-    $"server={server};database=nullinside;user={username};password={password};AllowUserVariables=true",
-    options => options.CommandTimeout(60 * 5)));
+    $"server={server};database=nullinside;user={username};password={password};AllowUserVariables=true;",
+    builder => {
+      builder.CommandTimeout(60 * 5);
+      builder.EnableRetryOnFailure(3);
+    }), ServiceLifetime.Transient);
 builder.Services.AddScoped<IAuthorizationHandler, BasicAuthorizationHandler>();
 builder.Services.AddHostedService<MainService>();
 builder.Services.AddAuthentication()
