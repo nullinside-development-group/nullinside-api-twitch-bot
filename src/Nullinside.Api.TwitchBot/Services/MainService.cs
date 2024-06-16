@@ -96,6 +96,7 @@ public class MainService : BackgroundService {
           await using (var db = scope.ServiceProvider.GetRequiredService<NullinsideContext>()) {
             List<User>? users = await
               (from user in db.Users
+                orderby user.TwitchLastScanned
                 where user.TwitchId != Constants.BotId &&
                       !user.IsBanned
                 select user)
@@ -108,6 +109,13 @@ public class MainService : BackgroundService {
               .FirstOrDefaultAsync(u => u.TwitchId == Constants.BotId, stoppingToken);
             if (null == botUser) {
               throw new Exception("No bot user in database");
+            }
+
+            TwitchApiProxy? botApi = await GetApiAndRefreshToken(botUser, db, stoppingToken);
+            if (null != botApi) {
+              IEnumerable<string> liveUsers =
+                await botApi.GetLiveChannels(users.Where(u => null != u.TwitchId).Select(u => u.TwitchId)!);
+              users = users.Where(u => liveUsers.Contains(u.TwitchId)).ToList();
             }
 
             Parallel.ForEach(users, new ParallelOptions { MaxDegreeOfParallelism = 5 }, async user => {
