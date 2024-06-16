@@ -86,10 +86,10 @@ public abstract class ABotRule : IBotRule {
 
     db.TwitchUser.UpdateRange(nonExistantUsers);
     db.TwitchBan
-      .AddRange(confirmedBans
+      .AddRange(possibleBans
         .Select(i => new TwitchBan {
           ChannelId = channelId,
-          BannedUserTwitchId = i.UserId,
+          BannedUserTwitchId = i,
           Reason = reason,
           Timestamp = DateTime.UtcNow
         }));
