@@ -21,8 +21,6 @@ public class MainService : BackgroundService {
   /// </summary>
   private readonly ILogger<MainService> _log;
 
-  private readonly IServiceProvider _serviceProvider;
-
   /// <summary>
   ///   The service scope factory.
   /// </summary>
@@ -33,11 +31,9 @@ public class MainService : BackgroundService {
   /// </summary>
   /// <param name="logger">The logger.</param>
   /// <param name="serviceScopeFactory">The service scope factory.</param>
-  public MainService(ILogger<MainService> logger, IServiceScopeFactory serviceScopeFactory,
-    IServiceProvider serviceProvider) {
+  public MainService(ILogger<MainService> logger, IServiceScopeFactory serviceScopeFactory) {
     _log = logger;
     _serviceScopeFactory = serviceScopeFactory;
-    _serviceProvider = serviceProvider;
   }
 
   /// <summary>
