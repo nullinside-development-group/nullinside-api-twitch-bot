@@ -1,6 +1,7 @@
 ﻿using Microsoft.EntityFrameworkCore;
 
 using Nullinside.Api.Common.Twitch;
+using Nullinside.Api.Common.Twitch.Json;
 using Nullinside.Api.Model;
 using Nullinside.Api.Model.Ddl;
 using Nullinside.Api.TwitchBot.Bots;
@@ -113,9 +114,19 @@ public class MainService : BackgroundService {
 
             TwitchApiProxy? botApi = await GetApiAndRefreshToken(botUser, db, stoppingToken);
             if (null != botApi) {
-              IEnumerable<string> liveUsers =
-                await botApi.GetLiveChannels(users.Where(u => null != u.TwitchId).Select(u => u.TwitchId)!);
+              // Trim channels that aren't live
+              IEnumerable<string> liveUsers = await botApi.GetLiveChannels(users
+                .Where(u => null != u.TwitchId)
+                .Select(u => u.TwitchId)!);
               users = users.Where(u => liveUsers.Contains(u.TwitchId)).ToList();
+
+              // Trim channels we aren't a mod in
+              IEnumerable<TwitchModeratedChannel> moddedChannels = await botApi.GetChannelsWeMod(Constants.BotId);
+              users = users
+                .Where(u => moddedChannels
+                  .Select(m => m.broadcaster_id)
+                  .Contains(u.TwitchId))
+                .ToList();
             }
 
             Parallel.ForEach(users, new ParallelOptions { MaxDegreeOfParallelism = 5 }, async user => {
