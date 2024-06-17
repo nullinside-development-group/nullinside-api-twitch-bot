@@ -6,6 +6,8 @@ using Nullinside.Api.Model;
 using Nullinside.Api.Model.Ddl;
 using Nullinside.Api.TwitchBot.Bots;
 
+using TwitchLib.Client.Events;
+
 namespace Nullinside.Api.TwitchBot.Services;
 
 /// <summary>
@@ -21,6 +23,24 @@ public class MainService : BackgroundService {
   ///   The logger.
   /// </summary>
   private readonly ILogger<MainService> _log;
+
+  /// <summary>
+  ///   A collection of all bans received.
+  /// </summary>
+  /// <remarks>
+  ///   We keep these to cross-reference with the <see cref="_receivedMessages" /> so we can detect possible
+  ///   bot messages. This helps identify bots like the ones that post "Click here for viewers: scam.com".
+  /// </remarks>
+  private readonly List<OnUserBannedArgs> _receivedBans = new();
+
+  /// <summary>
+  ///   A collection of all chat messages.
+  /// </summary>
+  /// <remarks>
+  ///   We keep these to cross-reference with the <see cref="_receivedBans" /> so we can detect possible
+  ///   bot messages. This helps identify bots like the ones that post "Click here for viewers: scam.com".
+  /// </remarks>
+  private readonly List<OnMessageReceivedArgs> _receivedMessages = new();
 
   /// <summary>
   ///   The service scope factory.
@@ -95,17 +115,16 @@ public class MainService : BackgroundService {
       while (!stoppingToken.IsCancellationRequested) {
         using (IServiceScope scope = _serviceScopeFactory.CreateAsyncScope()) {
           await using (var db = scope.ServiceProvider.GetRequiredService<NullinsideContext>()) {
-            List<User>? users = await
-              (from user in db.Users
-                orderby user.TwitchLastScanned
-                where user.TwitchId != Constants.BotId &&
-                      !user.IsBanned
-                select user)
-              .Include(u => u.TwitchConfig)
-              .Where(u => null != u.TwitchConfig && u.TwitchConfig.Enabled)
-              .AsNoTracking()
-              .ToListAsync(stoppingToken);
+            // Send logs to database
+            DumpLogsToDatabase(db);
 
+            // Get the list of users with the bot enabled.
+            List<User>? usersWithBotEnabled = await GetUsersWithBotEnabled(db, stoppingToken);
+            if (null == usersWithBotEnabled) {
+              continue;
+            }
+
+            // Get the bot user's information.
             User? botUser = await db.Users.AsNoTracking()
               .FirstOrDefaultAsync(u => u.TwitchId == Constants.BotId, stoppingToken);
             if (null == botUser) {
@@ -115,21 +134,30 @@ public class MainService : BackgroundService {
             TwitchApiProxy? botApi = await GetApiAndRefreshToken(botUser, db, stoppingToken);
             if (null != botApi) {
               // Trim channels that aren't live
-              IEnumerable<string> liveUsers = await botApi.GetLiveChannels(users
+              IEnumerable<string> liveUsers = await botApi.GetLiveChannels(usersWithBotEnabled
                 .Where(u => null != u.TwitchId)
                 .Select(u => u.TwitchId)!);
-              users = users.Where(u => liveUsers.Contains(u.TwitchId)).ToList();
+              usersWithBotEnabled = usersWithBotEnabled.Where(u => liveUsers.Contains(u.TwitchId)).ToList();
 
               // Trim channels we aren't a mod in
               IEnumerable<TwitchModeratedChannel> moddedChannels = await botApi.GetChannelsWeMod(Constants.BotId);
-              users = users
+              usersWithBotEnabled = usersWithBotEnabled
                 .Where(u => moddedChannels
                   .Select(m => m.broadcaster_id)
                   .Contains(u.TwitchId))
                 .ToList();
+
+              // Join all the channels we're a mod in
+              TwitchClientProxy.Instance.TwitchUsername = Constants.BotUsername;
+              TwitchClientProxy.Instance.TwitchOAuthToken = botApi.AccessToken;
+
+              foreach (TwitchModeratedChannel channel in moddedChannels) {
+                await TwitchClientProxy.Instance.AddMessageCallback(channel.broadcaster_login, Callback);
+                await TwitchClientProxy.Instance.AddBannedCallback(channel.broadcaster_login, Callback);
+              }
             }
 
-            Parallel.ForEach(users, new ParallelOptions { MaxDegreeOfParallelism = 5 }, async user => {
+            Parallel.ForEach(usersWithBotEnabled, new ParallelOptions { MaxDegreeOfParallelism = 5 }, async user => {
               try {
                 await DoScan(user, botUser, stoppingToken);
               }
@@ -146,6 +174,59 @@ public class MainService : BackgroundService {
     catch (Exception ex) {
       _log.LogError(ex, "Main Inner failed");
     }
+  }
+
+  private void DumpLogsToDatabase(NullinsideContext db) {
+    lock (_receivedBans) {
+      db.TwitchUserBannedOutsideOfBotLogs.AddRange(_receivedBans.Select(b => new TwitchUserBannedOutsideOfBotLogs {
+        Channel = b.UserBan.Channel,
+        Reason = b.UserBan.BanReason,
+        Timestamp = DateTime.UtcNow,
+        TwitchId = b.UserBan.TargetUserId,
+        TwitchUsername = b.UserBan.Username
+      }));
+
+      _receivedBans.Clear();
+    }
+
+    lock (_receivedMessages) {
+      db.TwitchUserChatLogs.AddRange(_receivedMessages.Select(m => new TwitchUserChatLogs {
+        Channel = m.ChatMessage.Channel,
+        TwitchId = m.ChatMessage.UserId,
+        TwitchUsername = m.ChatMessage.Username,
+        Message = m.ChatMessage.Message,
+        Timestamp = DateTime.UtcNow // TODO: Convert the tmi-ts to a datetime.
+      }));
+
+      _receivedMessages.Clear();
+    }
+
+    db.SaveChanges();
+  }
+
+  private void Callback(OnUserBannedArgs obj) {
+    lock (_receivedBans) {
+      _receivedBans.Add(obj);
+    }
+  }
+
+  private void Callback(OnMessageReceivedArgs obj) {
+    lock (_receivedMessages) {
+      _receivedMessages.Add(obj);
+    }
+  }
+
+  private async Task<List<User>?> GetUsersWithBotEnabled(NullinsideContext db, CancellationToken stoppingToken) {
+    return await
+      (from user in db.Users
+        orderby user.TwitchLastScanned
+        where user.TwitchId != Constants.BotId &&
+              !user.IsBanned
+        select user)
+      .Include(u => u.TwitchConfig)
+      .Where(u => null != u.TwitchConfig && u.TwitchConfig.Enabled)
+      .AsNoTracking()
+      .ToListAsync(stoppingToken);
   }
 
   private async Task DoScan(User user, User botUser, CancellationToken stoppingToken) {
@@ -200,7 +281,7 @@ public class MainService : BackgroundService {
     TwitchApiProxy api = GetApi(user);
 
     // Refresh its token if necessary.
-    if (DateTime.UtcNow < user.TwitchTokenExpiration + TimeSpan.FromHours(1)) {
+    if (DateTime.UtcNow + TimeSpan.FromHours(1) > user.TwitchTokenExpiration) {
       if (await api.RefreshTokenAsync(stoppingToken)) {
         User? row = await db.Users.FirstOrDefaultAsync(u => u.Id == user.Id, stoppingToken);
         if (null == row) {
