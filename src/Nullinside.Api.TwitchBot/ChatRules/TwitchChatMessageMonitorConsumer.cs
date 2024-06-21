@@ -110,7 +110,6 @@ public class TwitchChatMessageMonitorConsumer : IDisposable {
         }
 
         string? channel = message.Channel;
-        LOG.Debug($"[{channel}] {message.Username}: {message.Message}");
         try {
           // Sanity check.
           if (string.IsNullOrWhiteSpace(message.Channel) ||
