@@ -1,12 +1,17 @@
-﻿using Microsoft.EntityFrameworkCore;
+﻿using System.Collections.Concurrent;
+
+using Microsoft.EntityFrameworkCore;
 
 using Nullinside.Api.Common.Twitch;
 using Nullinside.Api.Common.Twitch.Json;
 using Nullinside.Api.Model;
 using Nullinside.Api.Model.Ddl;
 using Nullinside.Api.TwitchBot.Bots;
+using Nullinside.Api.TwitchBot.ChatRules;
+using Nullinside.Api.TwitchBot.Model;
 
 using TwitchLib.Client.Events;
+using TwitchLib.Client.Models;
 
 namespace Nullinside.Api.TwitchBot.Services;
 
@@ -15,9 +20,24 @@ namespace Nullinside.Api.TwitchBot.Services;
 /// </summary>
 public class MainService : BackgroundService {
   /// <summary>
+  ///   The amount of time to wait between each scan of the live users, in milliseconds.
+  /// </summary>
+  private const int ScanLoopDelayMilliseconds = 10000;
+
+  /// <summary>
   ///   The bot rules to scan with.
   /// </summary>
-  private static IBotRule[]? botRules;
+  private static IBotRule[]? _botRules;
+
+  /// <summary>
+  ///   Handles the enforcing rules on chat messages.
+  /// </summary>
+  private readonly TwitchChatMessageMonitorConsumer _chatMessageConsumer;
+
+  /// <summary>
+  ///   The database.
+  /// </summary>
+  private readonly NullinsideContext _db;
 
   /// <summary>
   ///   The logger.
@@ -34,6 +54,11 @@ public class MainService : BackgroundService {
   private readonly List<OnUserBannedArgs> _receivedBans = new();
 
   /// <summary>
+  ///   The queue of twitch chat messages consumed by <see cref="_chatMessageConsumer" /> for the enforcement of rules.
+  /// </summary>
+  private readonly BlockingCollection<ChatMessage> _receivedMessageProcessingQueue = new();
+
+  /// <summary>
   ///   A collection of all chat messages.
   /// </summary>
   /// <remarks>
@@ -41,6 +66,11 @@ public class MainService : BackgroundService {
   ///   bot messages. This helps identify bots like the ones that post "Click here for viewers: scam.com".
   /// </remarks>
   private readonly List<OnMessageReceivedArgs> _receivedMessages = new();
+
+  /// <summary>
+  ///   The service scope.
+  /// </summary>
+  private readonly IServiceScope _scope;
 
   /// <summary>
   ///   The service scope factory.
@@ -55,6 +85,9 @@ public class MainService : BackgroundService {
   public MainService(ILogger<MainService> logger, IServiceScopeFactory serviceScopeFactory) {
     _log = logger;
     _serviceScopeFactory = serviceScopeFactory;
+    _scope = _serviceScopeFactory.CreateScope();
+    _db = _scope.ServiceProvider.GetRequiredService<NullinsideContext>();
+    _chatMessageConsumer = new TwitchChatMessageMonitorConsumer(_db, _receivedMessageProcessingQueue);
   }
 
   /// <summary>
@@ -65,34 +98,17 @@ public class MainService : BackgroundService {
     return Task.Run(async () => {
       while (!stoppingToken.IsCancellationRequested) {
         try {
-          {
-            string? token;
-            {
-              using (IServiceScope scope = _serviceScopeFactory.CreateAsyncScope()) {
-                await using (var db = scope.ServiceProvider.GetRequiredService<NullinsideContext>()) {
-                  User? botUser =
-                    await db.Users.FirstOrDefaultAsync(u => Constants.BotEmail.Equals(u.Email), stoppingToken);
-                  if (null == botUser) {
-                    throw new Exception("Bot User not found in Database");
-                  }
-
-                  TwitchApiProxy botApi = GetApi(botUser);
-                  if (!await botApi.IsValid(stoppingToken)) {
-                    throw new Exception("Unable to log in as bot user");
-                  }
-
-                  token = botUser.TwitchToken;
-                }
-              }
-            }
-
-            TwitchClientProxy.Instance.TwitchUsername = Constants.BotUsername;
-            TwitchClientProxy.Instance.TwitchOAuthToken = token;
+          TwitchApiProxy? botApi = await _db.GetBotApiAndRefreshToken(stoppingToken);
+          if (null == botApi || !await botApi.IsValid(stoppingToken)) {
+            throw new Exception("Unable to log in as bot user");
           }
 
-          botRules = AppDomain.CurrentDomain.GetAssemblies()
+          TwitchClientProxy.Instance.TwitchUsername = Constants.BotUsername;
+          TwitchClientProxy.Instance.TwitchOAuthToken = botApi.AccessToken;
+
+          _botRules = AppDomain.CurrentDomain.GetAssemblies()
             .SelectMany(a => a.GetTypes())
-            .Where(t => typeof(IBotRule).IsAssignableFrom(t) && !t.IsAbstract && !t.IsInterface)
+            .Where(t => typeof(IBotRule).IsAssignableFrom(t) && t is { IsAbstract: false, IsInterface: false })
             .Select(t => Activator.CreateInstance(t) as IBotRule)
             .Where(o => null != o)
             .ToArray()!;
@@ -107,7 +123,7 @@ public class MainService : BackgroundService {
   }
 
   /// <summary>
-  ///   The starting point for running the bots functionality.
+  ///   The starting point for running the bots' functionality.
   /// </summary>
   /// <param name="stoppingToken">The stopping token.</param>
   private async Task Main(CancellationToken stoppingToken) {
@@ -131,7 +147,7 @@ public class MainService : BackgroundService {
               throw new Exception("No bot user in database");
             }
 
-            TwitchApiProxy? botApi = await GetApiAndRefreshToken(botUser, db, stoppingToken);
+            TwitchApiProxy? botApi = await db.GetApiAndRefreshToken(botUser, stoppingToken);
             if (null != botApi) {
               // Trim channels that aren't live
               IEnumerable<string> liveUsers = await botApi.GetLiveChannels(usersWithBotEnabled
@@ -147,16 +163,16 @@ public class MainService : BackgroundService {
                   .Contains(u.TwitchId))
                 .ToList();
 
-              // Join all the channels we're a mod in
-              TwitchClientProxy.Instance.TwitchUsername = Constants.BotUsername;
-              TwitchClientProxy.Instance.TwitchOAuthToken = botApi.AccessToken;
-
+              // Join all the channels we're a mod in. Why do we limit it to channels we are a mod in? Twitch changed
+              // its chat limits so that "verified bots" like us don't get special treatment anymore. The only thing
+              // that skips the chat limits is if it's a channel you're a mod in.
               foreach (TwitchModeratedChannel channel in moddedChannels) {
-                await TwitchClientProxy.Instance.AddMessageCallback(channel.broadcaster_login, Callback);
-                await TwitchClientProxy.Instance.AddBannedCallback(channel.broadcaster_login, Callback);
+                await TwitchClientProxy.Instance.AddMessageCallback(channel.broadcaster_login, OnTwitchMessageReceived);
+                await TwitchClientProxy.Instance.AddBannedCallback(channel.broadcaster_login, OnTwitchBanReceived);
               }
             }
 
+            // Spawn 5 workers to process all the live user's channels.
             Parallel.ForEach(usersWithBotEnabled, new ParallelOptions { MaxDegreeOfParallelism = 5 }, async user => {
               try {
                 await DoScan(user, botUser, stoppingToken);
@@ -165,10 +181,11 @@ public class MainService : BackgroundService {
                 _log.LogError(ex, $"Scan failed for {user.TwitchUsername}");
               }
             });
-
-            await Task.Delay(10000, stoppingToken);
           }
         }
+
+        // Wait between scans. We don't want to spam the API too much.
+        await Task.Delay(ScanLoopDelayMilliseconds, stoppingToken);
       }
     }
     catch (Exception ex) {
@@ -176,6 +193,10 @@ public class MainService : BackgroundService {
     }
   }
 
+  /// <summary>
+  ///   Dumps a record of the current batch of twitch bans and twitch messages into the database.
+  /// </summary>
+  /// <param name="db">The database.</param>
   private void DumpLogsToDatabase(NullinsideContext db) {
     lock (_receivedBans) {
       db.TwitchUserBannedOutsideOfBotLogs.AddRange(_receivedBans.Select(b => new TwitchUserBannedOutsideOfBotLogs {
@@ -204,18 +225,34 @@ public class MainService : BackgroundService {
     db.SaveChanges();
   }
 
-  private void Callback(OnUserBannedArgs obj) {
+  /// <summary>
+  ///   Records bans for all of our user's chats.
+  /// </summary>
+  /// <param name="e">The ban.</param>
+  private void OnTwitchBanReceived(OnUserBannedArgs e) {
     lock (_receivedBans) {
-      _receivedBans.Add(obj);
+      _receivedBans.Add(e);
     }
   }
 
-  private void Callback(OnMessageReceivedArgs obj) {
+  /// <summary>
+  ///   Records chat messages for all our user's chats.
+  /// </summary>
+  /// <param name="e">The chat message.</param>
+  private void OnTwitchMessageReceived(OnMessageReceivedArgs e) {
+    _receivedMessageProcessingQueue.Add(e.ChatMessage);
+
     lock (_receivedMessages) {
-      _receivedMessages.Add(obj);
+      _receivedMessages.Add(e);
     }
   }
 
+  /// <summary>
+  ///   Retrieve all users that have the bot enabled.
+  /// </summary>
+  /// <param name="db">The database.</param>
+  /// <param name="stoppingToken">The stopping token.</param>
+  /// <returns>The list of users with the bot enabled.</returns>
   private async Task<List<User>?> GetUsersWithBotEnabled(NullinsideContext db, CancellationToken stoppingToken) {
     return await
       (from user in db.Users
@@ -229,24 +266,32 @@ public class MainService : BackgroundService {
       .ToListAsync(stoppingToken);
   }
 
+  /// <summary>
+  ///   Performs the scan on a user.
+  /// </summary>
+  /// <param name="user">The user to scan.</param>
+  /// <param name="botUser">The bot user.</param>
+  /// <param name="stoppingToken">The stopping token.</param>
   private async Task DoScan(User user, User botUser, CancellationToken stoppingToken) {
     // Determine if it's too early for a scan.
     if (DateTime.UtcNow < user.TwitchLastScanned + Constants.MinimumTimeBetweenScansLive) {
       return;
     }
 
+    // Since each scan will happen on a separate thread, we need an individual scope and database reference
+    // per invocation, allowing them to release each loop.
     using (IServiceScope scope = _serviceScopeFactory.CreateAsyncScope()) {
       await using (var db = scope.ServiceProvider.GetRequiredService<NullinsideContext>()) {
         // Get the API
-        TwitchApiProxy? botApi = await GetApiAndRefreshToken(botUser, db, stoppingToken);
-        if (null == botRules || null == user.TwitchConfig || null == botApi) {
+        TwitchApiProxy? botApi = await db.GetApiAndRefreshToken(botUser, stoppingToken);
+        if (null == _botRules || null == user.TwitchConfig || null == botApi) {
           return;
         }
 
         // Run the rules that scan the chats and the accounts.
-        foreach (IBotRule rule in botRules) {
+        foreach (IBotRule rule in _botRules) {
           try {
-            if (rule.ShouldRun(user, user.TwitchConfig)) {
+            if (rule.ShouldRun(user.TwitchConfig)) {
               await rule.Handle(user, user.TwitchConfig, botApi, db, stoppingToken);
             }
           }
@@ -265,36 +310,5 @@ public class MainService : BackgroundService {
         await db.SaveChangesAsync(stoppingToken);
       }
     }
-  }
-
-  private static TwitchApiProxy GetApi(User user) {
-    return new TwitchApiProxy {
-      AccessToken = user.TwitchToken,
-      RefreshToken = user.TwitchRefreshToken,
-      ExpiresUtc = user.TwitchTokenExpiration
-    };
-  }
-
-  private static async Task<TwitchApiProxy?> GetApiAndRefreshToken(User user, NullinsideContext db,
-    CancellationToken stoppingToken = new()) {
-    // Get the API
-    TwitchApiProxy api = GetApi(user);
-
-    // Refresh its token if necessary.
-    if (DateTime.UtcNow + TimeSpan.FromHours(1) > user.TwitchTokenExpiration) {
-      if (await api.RefreshTokenAsync(stoppingToken)) {
-        User? row = await db.Users.FirstOrDefaultAsync(u => u.Id == user.Id, stoppingToken);
-        if (null == row) {
-          return null;
-        }
-
-        row.TwitchToken = api.AccessToken;
-        row.TwitchRefreshToken = api.RefreshToken;
-        row.TwitchTokenExpiration = api.ExpiresUtc;
-        await db.SaveChangesAsync(stoppingToken);
-      }
-    }
-
-    return api;
   }
 }
