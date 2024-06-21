@@ -55,10 +55,9 @@ public class BanKnownBots : ABotRule {
   /// <summary>
   ///   Determine if the rule is enabled in the configuration.
   /// </summary>
-  /// <param name="user">The user.</param>
   /// <param name="config">The user's configuration.</param>
   /// <returns>True if it should run, false otherwise.</returns>
-  public override bool ShouldRun(User user, TwitchUserConfig config) {
+  public override bool ShouldRun(TwitchUserConfig config) {
     return config is { Enabled: true, BanKnownBots: true };
   }
 

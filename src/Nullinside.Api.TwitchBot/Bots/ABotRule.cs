@@ -15,10 +15,9 @@ public abstract class ABotRule : IBotRule {
   /// <summary>
   ///   Determine if the rule is enabled in the configuration.
   /// </summary>
-  /// <param name="user">The user.</param>
   /// <param name="config">The user's configuration.</param>
   /// <returns>True if it should run, false otherwise.</returns>
-  public abstract bool ShouldRun(User user, TwitchUserConfig config);
+  public abstract bool ShouldRun(TwitchUserConfig config);
 
   /// <summary>
   ///   Performs the bot banning logic for the rule.
