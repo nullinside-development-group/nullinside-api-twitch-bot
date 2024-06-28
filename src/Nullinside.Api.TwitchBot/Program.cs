@@ -1,7 +1,5 @@
 using System.Reflection;
 
-using log4net.Config;
-
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.EntityFrameworkCore;
@@ -13,8 +11,10 @@ using Nullinside.Api.Model;
 using Nullinside.Api.TwitchBot.Services;
 
 const string CORS_KEY = "_customAllowedSpecificOrigins";
-BasicConfigurator.Configure();
+
 WebApplicationBuilder builder = WebApplication.CreateBuilder(args);
+builder.Logging.ClearProviders();
+builder.Logging.AddLog4Net();
 
 // Secrets are mounted into the container.
 string? server = Environment.GetEnvironmentVariable("MYSQL_SERVER");
