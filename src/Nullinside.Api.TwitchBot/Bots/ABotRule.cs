@@ -1,10 +1,11 @@
-using Microsoft.EntityFrameworkCore;
-
 using Nullinside.Api.Common.Twitch;
 using Nullinside.Api.Model;
 using Nullinside.Api.Model.Ddl;
+using Nullinside.Api.TwitchBot.Model;
 
 using TwitchLib.Api.Helix.Models.Moderation.BanUser;
+
+using TwitchUserConfig = Nullinside.Api.Model.Ddl.TwitchUserConfig;
 
 namespace Nullinside.Api.TwitchBot.Bots;
 
@@ -69,30 +70,7 @@ public abstract class ABotRule : IBotRule {
     IEnumerable<BannedUser> confirmedBans =
       await botProxy.BanUsers(channelId, Constants.BotId, bansToTry, reason, stoppingToken);
 
-    HashSet<string?> existingUsers = db.TwitchUser
-      .AsNoTracking()
-      .Where(u => null != u.TwitchId && possibleBans.Contains(u.TwitchId))
-      .Select(u => u.TwitchId)
-      .ToHashSet();
-
-    List<TwitchUser> nonExistantUsers = possibleBans
-      .Where(u => !existingUsers.Contains(u))
-      .Select(c => new TwitchUser {
-        TwitchId = c,
-        TwitchUsername = users.FirstOrDefault(u => string.Equals(u.Id, c)).Username
-      })
-      .ToList();
-
-    db.TwitchUser.UpdateRange(nonExistantUsers);
-    db.TwitchBan
-      .AddRange(possibleBans
-        .Select(i => new TwitchBan {
-          ChannelId = channelId,
-          BannedUserTwitchId = i,
-          Reason = reason,
-          Timestamp = DateTime.UtcNow
-        }));
-    await db.SaveChangesAsync(stoppingToken);
+    await db.SaveTwitchBans(channelId, users, reason, stoppingToken);
     return confirmedBans;
   }
 }

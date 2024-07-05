@@ -1,4 +1,5 @@
 ﻿using Nullinside.Api.Common.Twitch;
+using Nullinside.Api.Model;
 using Nullinside.Api.Model.Ddl;
 
 using TwitchLib.Client.Models;
@@ -8,20 +9,20 @@ namespace Nullinside.Api.TwitchBot.ChatRules;
 /// <summary>
 ///   Handles "streamviewers org" spam.
 /// </summary>
-public class StreamViewers : IChatRule {
+public class StreamViewers : AChatRule {
   private const int MinThreshold = 70;
 
   private const string ExpectedSpamMessage =
     "doyoualreadytriedstreamviewersorg?realviewers,fireworks!theyarenowgivingoutafreepackageforstreamersoo";
 
   /// <inheritdoc />
-  public bool ShouldRun(TwitchUserConfig config) {
+  public override bool ShouldRun(TwitchUserConfig config) {
     return config is { Enabled: true, BanKnownBots: true };
   }
 
   /// <inheritdoc />
-  public async Task<bool> Handle(string channelId, TwitchApiProxy botProxy, ChatMessage message,
-    CancellationToken stoppingToken = new()) {
+  public override async Task<bool> Handle(string channelId, TwitchApiProxy botProxy, ChatMessage message,
+    NullinsideContext db, CancellationToken stoppingToken = new()) {
     List<string> parts = message.Message
       .Split(" ")
       .Where(s => !string.IsNullOrWhiteSpace(s))
@@ -78,8 +79,8 @@ public class StreamViewers : IChatRule {
     // 2. Had the characters we expected in exactly the correct places over 70 times.
     // 3. In places where the characters didn't match, they only didn't match because the message used a non-english keyboard character. It was never because a different letter was in the position.
     // 4. It was probably an @ mention to another user where the @ was the first thing in the message.
-    await botProxy.BanUsers(channelId, Constants.BotId, new[] { (message.UserId, message.Username) },
-      "[Bot] Spam (StreamViewers)", stoppingToken);
+    await BanAndLog(channelId, botProxy, new[] { (message.UserId, message.Username) },
+      "[Bot] Spam (StreamViewers)", db, stoppingToken);
     return false;
   }
 }
