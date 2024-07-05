@@ -1,4 +1,5 @@
 ﻿using Nullinside.Api.Common.Twitch;
+using Nullinside.Api.Model;
 using Nullinside.Api.Model.Ddl;
 
 using TwitchLib.Client.Models;
@@ -23,8 +24,9 @@ public interface IChatRule {
   /// <param name="channelId">The identifier of the channel.</param>
   /// <param name="botProxy">The twitch api authenticated as the bot user.</param>
   /// <param name="message">The chat message.</param>
+  /// <param name="db">The database.</param>
   /// <param name="stoppingToken">The cancellation token.</param>
   /// <returns>An asynchronous task.</returns>
-  public Task<bool> Handle(string channelId, TwitchApiProxy botProxy, ChatMessage message,
+  public Task<bool> Handle(string channelId, TwitchApiProxy botProxy, ChatMessage message, NullinsideContext db,
     CancellationToken stoppingToken = new());
 }

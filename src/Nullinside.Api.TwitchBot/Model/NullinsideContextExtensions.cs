@@ -79,4 +79,41 @@ public static class NullinsideContextExtensions {
 
     return await GetApiAndRefreshToken(db, botUser, stoppingToken);
   }
+
+  /// <summary>
+  ///   Saves twitch bans to the database.
+  /// </summary>
+  /// <param name="db">The database.</param>
+  /// <param name="channelId">The channel the user is being banned in.</param>
+  /// <param name="bannedUsers">The users being banned.</param>
+  /// <param name="reason">The reason for the bans.</param>
+  /// <param name="stoppingToken">The stopping token.</param>
+  public static async Task SaveTwitchBans(this NullinsideContext db, string channelId,
+    IEnumerable<(string Id, string Username)> bannedUsers, string reason, CancellationToken stoppingToken = new()) {
+    List<string> banUserIds = bannedUsers.Select(b => b.Id).ToList();
+    HashSet<string?> existingUsers = db.TwitchUser
+      .AsNoTracking()
+      .Where(u => null != u.TwitchId && banUserIds.Contains(u.TwitchId))
+      .Select(u => u.TwitchId)
+      .ToHashSet();
+
+    List<TwitchUser> nonExistantUsers = banUserIds
+      .Where(u => !existingUsers.Contains(u))
+      .Select(c => new TwitchUser {
+        TwitchId = c,
+        TwitchUsername = bannedUsers.FirstOrDefault(u => string.Equals(u.Id, c)).Username
+      })
+      .ToList();
+
+    db.TwitchUser.UpdateRange(nonExistantUsers);
+    db.TwitchBan
+      .AddRange(banUserIds
+        .Select(i => new TwitchBan {
+          ChannelId = channelId,
+          BannedUserTwitchId = i,
+          Reason = reason,
+          Timestamp = DateTime.UtcNow
+        }));
+    await db.SaveChangesAsync(stoppingToken);
+  }
 }
