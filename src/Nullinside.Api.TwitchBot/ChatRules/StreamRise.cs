@@ -24,7 +24,7 @@ public class StreamRise : AChatRule {
   /// <inheritdoc />
   public override async Task<bool> Handle(string channelId, TwitchApiProxy botProxy, ChatMessage message,
     NullinsideContext db, CancellationToken stoppingToken = new()) {
-    if (_spam.Equals(message.Message, StringComparison.InvariantCultureIgnoreCase)) {
+    if (message.IsFirstMessage && _spam.Equals(message.Message, StringComparison.InvariantCultureIgnoreCase)) {
       await BanAndLog(channelId, botProxy, new[] { (message.UserId, message.Username) },
         "[Bot] Spam (StreamRise)", db, stoppingToken);
       return false;

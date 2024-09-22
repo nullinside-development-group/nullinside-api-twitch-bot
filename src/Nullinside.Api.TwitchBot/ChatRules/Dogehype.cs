@@ -23,7 +23,7 @@ public class Dogehype : AChatRule {
       .ToLowerInvariant();
 
     // Message will start with any of these variations.
-    if (normalized.Contains("dogehype")) {
+    if (message.IsFirstMessage && normalized.Contains("dogehype")) {
       await BanAndLog(channelId, botProxy, new[] { (message.UserId, message.Username) },
         "[Bot] Spam (Dogehype)", db, stoppingToken);
       return false;

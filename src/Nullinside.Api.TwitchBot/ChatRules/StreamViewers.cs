@@ -23,6 +23,10 @@ public class StreamViewers : AChatRule {
   /// <inheritdoc />
   public override async Task<bool> Handle(string channelId, TwitchApiProxy botProxy, ChatMessage message,
     NullinsideContext db, CancellationToken stoppingToken = new()) {
+    if (!message.IsFirstMessage) {
+      return true;
+    }
+    
     List<string> parts = message.Message
       .Split(" ")
       .Where(s => !string.IsNullOrWhiteSpace(s))
