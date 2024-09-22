@@ -23,6 +23,10 @@ public class BestCheapViewers : AChatRule {
   /// <inheritdoc />
   public override async Task<bool> Handle(string channelId, TwitchApiProxy botProxy, ChatMessage message,
     NullinsideContext db, CancellationToken stoppingToken = new()) {
+    if (!message.IsFirstMessage) {
+      return true;
+    }
+    
     // The number of spaces per message may chance, so normalize that and lowercase it for comparison.
     string normalized = string.Join(' ', message.Message.Split(" ").Where(s => !string.IsNullOrWhiteSpace(s)))
       .ToLowerInvariant();
