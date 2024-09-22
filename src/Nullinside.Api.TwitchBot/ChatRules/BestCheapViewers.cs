@@ -13,7 +13,10 @@ public class BestCheapViewers : AChatRule {
   /// <summary>
   ///  The strings that we expect to receive if this is a bot.
   /// </summary>
-  public readonly string[] EXPECTED = ["best viewers on", "cheap viewers on"];
+  public readonly string[] EXPECTED = [
+    "best viewers on", 
+    "cheap viewers on"
+  ];
   
   /// <inheritdoc />
   public override bool ShouldRun(TwitchUserConfig config) {
