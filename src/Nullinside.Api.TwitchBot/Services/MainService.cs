@@ -117,6 +117,7 @@ public class MainService : BackgroundService {
         }
         catch (Exception ex) {
           _log.LogError(ex, "Main Failed");
+          await Task.Delay(TimeSpan.FromSeconds(10));
         }
       }
     }, stoppingToken);
