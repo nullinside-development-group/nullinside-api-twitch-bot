@@ -15,7 +15,9 @@ public class BestCheapViewers : AChatRule {
   /// </summary>
   public readonly string[] EXPECTED = [
     "best viewers on", 
-    "cheap viewers on"
+    "cheap viewers on",
+    "cheap folloewrs on",
+    "do you want more viewers and to rank higher on the twitch list? you can visit the website"
   ];
   
   /// <inheritdoc />
