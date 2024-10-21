@@ -1,5 +1,7 @@
 ﻿using System.Collections.Concurrent;
 
+using log4net;
+
 using Microsoft.EntityFrameworkCore;
 
 using Nullinside.Api.Common.Twitch;
@@ -42,7 +44,7 @@ public class MainService : BackgroundService {
   /// <summary>
   ///   The logger.
   /// </summary>
-  private readonly ILogger<MainService> _log;
+  private readonly ILog _log = LogManager.GetLogger(typeof(MainService));
 
   /// <summary>
   ///   A collection of all bans received.
@@ -80,10 +82,8 @@ public class MainService : BackgroundService {
   /// <summary>
   ///   Initializes a new instance of the <see cref="MainService" /> class.
   /// </summary>
-  /// <param name="logger">The logger.</param>
   /// <param name="serviceScopeFactory">The service scope factory.</param>
-  public MainService(ILogger<MainService> logger, IServiceScopeFactory serviceScopeFactory) {
-    _log = logger;
+  public MainService(IServiceScopeFactory serviceScopeFactory) {
     _serviceScopeFactory = serviceScopeFactory;
     _scope = _serviceScopeFactory.CreateScope();
     _db = _scope.ServiceProvider.GetRequiredService<NullinsideContext>();
@@ -116,7 +116,7 @@ public class MainService : BackgroundService {
           await Main(stoppingToken);
         }
         catch (Exception ex) {
-          _log.LogError(ex, "Main Failed");
+          _log.Error("Main Failed", ex);
           await Task.Delay(TimeSpan.FromSeconds(10), stoppingToken);
         }
       }
@@ -179,7 +179,7 @@ public class MainService : BackgroundService {
                 await DoScan(user, botUser, stoppingToken);
               }
               catch (Exception ex) {
-                _log.LogError(ex, $"Scan failed for {user.TwitchUsername}");
+                _log.Error($"Scan failed for {user.TwitchUsername}", ex);
               }
             });
           }
@@ -190,7 +190,7 @@ public class MainService : BackgroundService {
       }
     }
     catch (Exception ex) {
-      _log.LogError(ex, "Main Inner failed");
+      _log.Error("Main Inner failed", ex);
     }
   }
 
@@ -297,7 +297,7 @@ public class MainService : BackgroundService {
             }
           }
           catch (Exception e) {
-            _log.LogError(e, $"{user.TwitchUsername}: Failed to evaluate rule");
+            _log.Error($"{user.TwitchUsername}: Failed to evaluate rule", e);
           }
         }
 
