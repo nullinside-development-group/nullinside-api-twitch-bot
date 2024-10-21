@@ -1,3 +1,5 @@
+using log4net;
+
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
@@ -26,16 +28,14 @@ public class LoginController : ControllerBase {
   /// <summary>
   ///   The logger.
   /// </summary>
-  private readonly ILogger<LoginController> _logger;
+  private readonly ILog _log = LogManager.GetLogger(typeof(LoginController));
 
   /// <summary>
   ///   Initializes a new instance of the <see cref="LoginController" /> class.
   /// </summary>
-  /// <param name="logger">The logger.</param>
   /// <param name="dbContext">The nullinside database.</param>
   /// <param name="configuration">The application's configuration.</param>
-  public LoginController(ILogger<LoginController> logger, NullinsideContext dbContext, IConfiguration configuration) {
-    _logger = logger;
+  public LoginController(NullinsideContext dbContext, IConfiguration configuration) {
     _dbContext = dbContext;
     _configuration = configuration;
   }
