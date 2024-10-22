@@ -20,7 +20,7 @@ public class Naked : AChatRule {
 
   /// <inheritdoc />
   public override async Task<bool> Handle(string channelId, TwitchApiProxy botProxy, ChatMessage message,
-    NullinsideContext db, CancellationToken stoppingToken = new()) {
+    INullinsideContext db, CancellationToken stoppingToken = new()) {
     if (message.IsFirstMessage &&
         (message.Message.TrimStart().StartsWith(_spam, StringComparison.InvariantCultureIgnoreCase) ||
          message.Message.TrimStart().StartsWith(_spam2, StringComparison.InvariantCultureIgnoreCase))) {

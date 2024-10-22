@@ -31,7 +31,7 @@ public abstract class ABotRule : IBotRule {
   /// <param name="stoppingToken">The cancellation token.</param>
   /// <returns>An asynchronous task.</returns>
   public abstract Task Handle(User user, TwitchUserConfig config, TwitchApiProxy botProxy,
-    NullinsideContext db, CancellationToken stoppingToken = new());
+    INullinsideContext db, CancellationToken stoppingToken = new());
 
   /// <summary>
   ///   Handles performing a ban only once, ever, on a user. Any future calls with the same user to be banned in the same
@@ -44,7 +44,7 @@ public abstract class ABotRule : IBotRule {
   /// <param name="reason">The reason for the ban.</param>
   /// <param name="stoppingToken">The cancellation token.</param>
   /// <returns>A collection of confirmed banned users.</returns>
-  protected virtual async Task<IEnumerable<BannedUser>?> BanOnce(TwitchApiProxy botProxy, NullinsideContext db,
+  protected virtual async Task<IEnumerable<BannedUser>?> BanOnce(TwitchApiProxy botProxy, INullinsideContext db,
     string channelId, IEnumerable<(string Id, string Username)> users, string reason,
     CancellationToken stoppingToken = new()) {
     // Get the list of everyone to ban

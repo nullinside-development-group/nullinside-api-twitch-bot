@@ -39,7 +39,7 @@ public class MainService : BackgroundService {
   /// <summary>
   ///   The database.
   /// </summary>
-  private readonly NullinsideContext _db;
+  private readonly INullinsideContext _db;
 
   /// <summary>
   ///   The logger.
@@ -86,7 +86,7 @@ public class MainService : BackgroundService {
   public MainService(IServiceScopeFactory serviceScopeFactory) {
     _serviceScopeFactory = serviceScopeFactory;
     _scope = _serviceScopeFactory.CreateScope();
-    _db = _scope.ServiceProvider.GetRequiredService<NullinsideContext>();
+    _db = _scope.ServiceProvider.GetRequiredService<INullinsideContext>();
     _chatMessageConsumer = new TwitchChatMessageMonitorConsumer(_db, _receivedMessageProcessingQueue);
   }
 
@@ -131,7 +131,7 @@ public class MainService : BackgroundService {
     try {
       while (!stoppingToken.IsCancellationRequested) {
         using (IServiceScope scope = _serviceScopeFactory.CreateAsyncScope()) {
-          await using (var db = scope.ServiceProvider.GetRequiredService<NullinsideContext>()) {
+          await using (var db = scope.ServiceProvider.GetRequiredService<INullinsideContext>()) {
             // Send logs to database
             DumpLogsToDatabase(db);
 
@@ -198,7 +198,7 @@ public class MainService : BackgroundService {
   ///   Dumps a record of the current batch of twitch bans and twitch messages into the database.
   /// </summary>
   /// <param name="db">The database.</param>
-  private void DumpLogsToDatabase(NullinsideContext db) {
+  private void DumpLogsToDatabase(INullinsideContext db) {
     lock (_receivedBans) {
       db.TwitchUserBannedOutsideOfBotLogs.AddRange(_receivedBans.Select(b => new TwitchUserBannedOutsideOfBotLogs {
         Channel = b.UserBan.Channel,
@@ -254,7 +254,7 @@ public class MainService : BackgroundService {
   /// <param name="db">The database.</param>
   /// <param name="stoppingToken">The stopping token.</param>
   /// <returns>The list of users with the bot enabled.</returns>
-  private async Task<List<User>?> GetUsersWithBotEnabled(NullinsideContext db, CancellationToken stoppingToken) {
+  private async Task<List<User>?> GetUsersWithBotEnabled(INullinsideContext db, CancellationToken stoppingToken) {
     return await
       (from user in db.Users
         orderby user.TwitchLastScanned
@@ -282,7 +282,7 @@ public class MainService : BackgroundService {
     // Since each scan will happen on a separate thread, we need an individual scope and database reference
     // per invocation, allowing them to release each loop.
     using (IServiceScope scope = _serviceScopeFactory.CreateAsyncScope()) {
-      await using (var db = scope.ServiceProvider.GetRequiredService<NullinsideContext>()) {
+      await using (var db = scope.ServiceProvider.GetRequiredService<INullinsideContext>()) {
         // Get the API
         TwitchApiProxy? botApi = await db.GetApiAndRefreshToken(botUser, stoppingToken);
         if (null == _botRules || null == user.TwitchConfig || null == botApi) {

@@ -29,7 +29,7 @@ public class BotController : ControllerBase {
   /// <summary>
   ///   The nullinside api database.
   /// </summary>
-  private readonly NullinsideContext _dbContext;
+  private readonly INullinsideContext _dbContext;
 
   /// <summary>
   ///   The logger.
@@ -41,7 +41,7 @@ public class BotController : ControllerBase {
   /// </summary>
   /// <param name="dbContext">The nullinside database.</param>
   /// <param name="configuration">The application's configuration.</param>
-  public BotController(NullinsideContext dbContext, IConfiguration configuration) {
+  public BotController(INullinsideContext dbContext, IConfiguration configuration) {
     _dbContext = dbContext;
     _configuration = configuration;
   }

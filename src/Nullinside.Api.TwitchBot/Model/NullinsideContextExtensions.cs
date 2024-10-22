@@ -30,7 +30,7 @@ public static class NullinsideContextExtensions {
   /// <param name="user">The user to configure the twitch api as.</param>
   /// <param name="stoppingToken">The stopping token.</param>
   /// <returns>The twitch api.</returns>
-  public static async Task<TwitchApiProxy?> GetApiAndRefreshToken(this NullinsideContext db, User user,
+  public static async Task<TwitchApiProxy?> GetApiAndRefreshToken(this INullinsideContext db, User user,
     CancellationToken stoppingToken = new()) {
     // Get the API
     TwitchApiProxy api = GetApi(user);
@@ -68,7 +68,7 @@ public static class NullinsideContextExtensions {
   /// <param name="db">The database.</param>
   /// <param name="stoppingToken">The stopping token.</param>
   /// <returns>The twitch api.</returns>
-  public static async Task<TwitchApiProxy?> GetBotApiAndRefreshToken(this NullinsideContext db,
+  public static async Task<TwitchApiProxy?> GetBotApiAndRefreshToken(this INullinsideContext db,
     CancellationToken stoppingToken = new()) {
     // Get the bot user's information.
     User? botUser = await db.Users.AsNoTracking()
@@ -88,7 +88,7 @@ public static class NullinsideContextExtensions {
   /// <param name="bannedUsers">The users being banned.</param>
   /// <param name="reason">The reason for the bans.</param>
   /// <param name="stoppingToken">The stopping token.</param>
-  public static async Task SaveTwitchBans(this NullinsideContext db, string channelId,
+  public static async Task SaveTwitchBans(this INullinsideContext db, string channelId,
     IEnumerable<(string Id, string Username)> bannedUsers, string reason, CancellationToken stoppingToken = new()) {
     List<string> banUserIds = bannedUsers.Select(b => b.Id).ToList();
     HashSet<string?> existingUsers = db.TwitchUser
