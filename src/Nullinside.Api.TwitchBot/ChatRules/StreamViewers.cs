@@ -22,7 +22,7 @@ public class StreamViewers : AChatRule {
 
   /// <inheritdoc />
   public override async Task<bool> Handle(string channelId, TwitchApiProxy botProxy, ChatMessage message,
-    NullinsideContext db, CancellationToken stoppingToken = new()) {
+    INullinsideContext db, CancellationToken stoppingToken = new()) {
     if (!message.IsFirstMessage) {
       return true;
     }

@@ -17,8 +17,7 @@ public abstract class AChatRule : IChatRule {
 
   /// <inheritdoc />
   public abstract Task<bool> Handle(string channelId, TwitchApiProxy botProxy, ChatMessage message,
-    NullinsideContext db,
-    CancellationToken stoppingToken = new());
+    INullinsideContext db, CancellationToken stoppingToken = new());
 
   /// <summary>
   ///   Bans a user and logs the ban attempt to the database.
@@ -30,7 +29,7 @@ public abstract class AChatRule : IChatRule {
   /// <param name="db">The database.</param>
   /// <param name="stoppingToken">The cancellation token.</param>
   public async Task BanAndLog(string channelId, TwitchApiProxy botProxy,
-    IEnumerable<(string Id, string Username)> users, string reason, NullinsideContext db,
+    IEnumerable<(string Id, string Username)> users, string reason, INullinsideContext db,
     CancellationToken stoppingToken = new()) {
     await botProxy.BanUsers(channelId, Constants.BotId, users, reason, stoppingToken);
     await db.SaveTwitchBans(channelId, users, reason, stoppingToken);

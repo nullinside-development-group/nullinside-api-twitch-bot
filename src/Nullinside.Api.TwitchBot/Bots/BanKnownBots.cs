@@ -70,7 +70,7 @@ public class BanKnownBots : ABotRule {
   /// <param name="db">The database.</param>
   /// <param name="stoppingToken">The cancellation token.</param>
   public override async Task Handle(User user, TwitchUserConfig config, TwitchApiProxy botProxy,
-    NullinsideContext db, CancellationToken stoppingToken = new()) {
+    INullinsideContext db, CancellationToken stoppingToken = new()) {
     if (null == user.TwitchId) {
       return;
     }

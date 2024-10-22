@@ -36,7 +36,7 @@ public class TwitchChatMessageMonitorConsumer : IDisposable {
   /// <summary>
   ///   The nullinside database.
   /// </summary>
-  private readonly NullinsideContext _db;
+  private readonly INullinsideContext _db;
 
   /// <summary>
   ///   The non-priority queue to scan messages from.
@@ -58,7 +58,7 @@ public class TwitchChatMessageMonitorConsumer : IDisposable {
   /// </summary>
   /// <param name="db">The database.</param>
   /// <param name="queue">The non-priority queue to scan messages from.</param>
-  public TwitchChatMessageMonitorConsumer(NullinsideContext db, BlockingCollection<ChatMessage> queue) {
+  public TwitchChatMessageMonitorConsumer(INullinsideContext db, BlockingCollection<ChatMessage> queue) {
     _db = db;
     _queue = queue;
 

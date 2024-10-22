@@ -20,7 +20,7 @@ builder.Logging.AddLog4Net();
 string? server = Environment.GetEnvironmentVariable("MYSQL_SERVER");
 string? username = Environment.GetEnvironmentVariable("MYSQL_USERNAME");
 string? password = Environment.GetEnvironmentVariable("MYSQL_PASSWORD");
-builder.Services.AddDbContext<NullinsideContext>(optionsBuilder =>
+builder.Services.AddDbContext<INullinsideContext, NullinsideContext>(optionsBuilder =>
   optionsBuilder.UseMySQL(
     $"server={server};database=nullinside;user={username};password={password};AllowUserVariables=true;",
     builder => {
