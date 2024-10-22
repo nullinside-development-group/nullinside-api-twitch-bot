@@ -26,7 +26,7 @@ public class BestCheapViewers : AChatRule {
   }
 
   /// <inheritdoc />
-  public override async Task<bool> Handle(string channelId, TwitchApiProxy botProxy, ChatMessage message,
+  public override async Task<bool> Handle(string channelId, ITwitchApiProxy botProxy, ChatMessage message,
     INullinsideContext db, CancellationToken stoppingToken = new()) {
     if (!message.IsFirstMessage) {
       return true;

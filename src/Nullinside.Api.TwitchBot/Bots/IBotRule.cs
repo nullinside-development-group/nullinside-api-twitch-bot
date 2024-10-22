@@ -25,6 +25,6 @@ public interface IBotRule {
   /// <param name="db">The database.</param>
   /// <param name="stoppingToken">The cancellation token.</param>
   /// <returns>An asynchronous task.</returns>
-  public Task Handle(User user, TwitchUserConfig config, TwitchApiProxy botProxy,
+  public Task Handle(User user, TwitchUserConfig config, ITwitchApiProxy botProxy,
     INullinsideContext db, CancellationToken stoppingToken = new());
 }

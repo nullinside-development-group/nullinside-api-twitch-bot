@@ -69,7 +69,7 @@ public class BanKnownBots : ABotRule {
   /// <param name="botProxy">The twitch api authenticated as the bot user.</param>
   /// <param name="db">The database.</param>
   /// <param name="stoppingToken">The cancellation token.</param>
-  public override async Task Handle(User user, TwitchUserConfig config, TwitchApiProxy botProxy,
+  public override async Task Handle(User user, TwitchUserConfig config, ITwitchApiProxy botProxy,
     INullinsideContext db, CancellationToken stoppingToken = new()) {
     if (null == user.TwitchId) {
       return;
@@ -79,7 +79,7 @@ public class BanKnownBots : ABotRule {
 
     // Get the list of people in the chat.
     List<Chatter>? chatters =
-      (await botProxy.GetChattersInChannel(user.TwitchId, Constants.BotId, stoppingToken))?.ToList();
+      (await botProxy.GetChannelUsers(user.TwitchId, Constants.BotId, stoppingToken))?.ToList();
     if (null == chatters || chatters.Count == 0) {
       return;
     }

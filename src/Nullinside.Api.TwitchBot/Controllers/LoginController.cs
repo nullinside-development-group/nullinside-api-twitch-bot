@@ -45,6 +45,7 @@ public class LoginController : ControllerBase {
   ///   redirects users back to the nullinside website.
   /// </summary>
   /// <param name="code">The credentials provided by twitch.</param>
+  /// <param name="api">The twitch api.</param>
   /// <param name="token">The cancellation token.</param>
   /// <returns>
   ///   A redirect to the nullinside website.
@@ -56,10 +57,9 @@ public class LoginController : ControllerBase {
   [AllowAnonymous]
   [HttpGet]
   [Route("twitch-login")]
-  public async Task<IActionResult> TwitchLogin([FromQuery] string code, CancellationToken token) {
+  public async Task<IActionResult> TwitchLogin([FromQuery] string code, [FromServices] ITwitchApiProxy api, CancellationToken token) {
     string? siteUrl = _configuration.GetValue<string>("Api:SiteUrl");
-    var api = new TwitchApiProxy();
-    if (!await api.GetAccessToken(code, token)) {
+    if (null == await api.CreateAccessToken(code, token)) {
       return Redirect($"{siteUrl}/twitch-bot/login?error=3");
     }
 
