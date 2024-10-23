@@ -27,6 +27,6 @@ public interface IChatRule {
   /// <param name="db">The database.</param>
   /// <param name="stoppingToken">The cancellation token.</param>
   /// <returns>An asynchronous task.</returns>
-  public Task<bool> Handle(string channelId, TwitchApiProxy botProxy, ChatMessage message, INullinsideContext db,
+  public Task<bool> Handle(string channelId, ITwitchApiProxy botProxy, ChatMessage message, INullinsideContext db,
     CancellationToken stoppingToken = new());
 }

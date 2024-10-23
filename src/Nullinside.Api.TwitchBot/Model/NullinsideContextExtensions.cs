@@ -14,9 +14,10 @@ public static class NullinsideContextExtensions {
   ///   Gets a twitch api proxy.
   /// </summary>
   /// <param name="user">The user to configure the proxy as.</param>
+  /// <param name="api">The twitch api object currently in use.</param>
   /// <returns>The twitch api.</returns>
-  public static TwitchApiProxy GetApi(this User user) {
-    return new TwitchApiProxy {
+  public static void Configure(this ITwitchApiProxy api, User user) {
+    api.OAuth = new() {
       AccessToken = user.TwitchToken,
       RefreshToken = user.TwitchRefreshToken,
       ExpiresUtc = user.TwitchTokenExpiration
@@ -28,48 +29,61 @@ public static class NullinsideContextExtensions {
   /// </summary>
   /// <param name="db">The database.</param>
   /// <param name="user">The user to configure the twitch api as.</param>
+  /// <param name="api">The twitch api.</param>
   /// <param name="stoppingToken">The stopping token.</param>
   /// <returns>The twitch api.</returns>
-  public static async Task<TwitchApiProxy?> GetApiAndRefreshToken(this INullinsideContext db, User user,
-    CancellationToken stoppingToken = new()) {
-    // Get the API
-    TwitchApiProxy api = GetApi(user);
+  public static async Task<ITwitchApiProxy?> ConfigureApiAndRefreshToken(this INullinsideContext db, User user,
+    ITwitchApiProxy api, CancellationToken stoppingToken = new()) {
+    api.Configure(user);
 
     // Refresh its token if necessary.
     if (!(DateTime.UtcNow + TimeSpan.FromHours(1) > user.TwitchTokenExpiration)) {
       return api;
     }
 
-    if (!await api.RefreshTokenAsync(stoppingToken)) {
+    if (null == await api.RefreshAccessToken(stoppingToken) || null == api.OAuth) {
       return api;
     }
 
-    User? row = await db.Users.FirstOrDefaultAsync(u => u.Id == user.Id, stoppingToken);
-    if (null == row) {
-      return null;
-    }
-
-    row.TwitchToken = api.AccessToken;
-    row.TwitchRefreshToken = api.RefreshToken;
-    row.TwitchTokenExpiration = api.ExpiresUtc;
-    await db.SaveChangesAsync(stoppingToken);
-
+    await db.UpdateOAuthInDatabase(user.Id, api.OAuth, stoppingToken);
     if (Constants.BotId.Equals(user.TwitchId, StringComparison.InvariantCultureIgnoreCase)) {
       TwitchClientProxy.Instance.TwitchUsername = Constants.BotUsername;
-      TwitchClientProxy.Instance.TwitchOAuthToken = api.AccessToken;
+      TwitchClientProxy.Instance.TwitchOAuthToken = api.OAuth.AccessToken;
     }
 
     return api;
   }
 
   /// <summary>
+  ///   Updates the OAuth of a user in the database.
+  /// </summary>
+  /// <param name="db">The database.</param>
+  /// <param name="userId">The user whose OAuth should be updated.</param>
+  /// <param name="oAuth">The OAuth information.</param>
+  /// <param name="stoppingToken">The stopping token.</param>
+  /// <returns>The number of state entries written to the database.</returns>
+  public static async Task<int> UpdateOAuthInDatabase(this INullinsideContext db, int userId,
+    TwitchAccessToken oAuth, CancellationToken stoppingToken = new()) {
+    User? row = await db.Users.FirstOrDefaultAsync(u => u.Id == userId, stoppingToken);
+    if (null == row) {
+      return -1;
+    }
+
+    row.TwitchToken = oAuth.AccessToken;
+    row.TwitchRefreshToken = oAuth.RefreshToken;
+    row.TwitchTokenExpiration = oAuth.ExpiresUtc;
+    return await db.SaveChangesAsync(stoppingToken);
+  }
+
+  /// <summary>
   ///   Gets a twitch api proxy for the bot user and refreshes its token if necessary.
   /// </summary>
   /// <param name="db">The database.</param>
+  /// <param name="api">The twitch api.</param>
   /// <param name="stoppingToken">The stopping token.</param>
   /// <returns>The twitch api.</returns>
-  public static async Task<TwitchApiProxy?> GetBotApiAndRefreshToken(this INullinsideContext db,
-    CancellationToken stoppingToken = new()) {
+  public static async Task<ITwitchApiProxy?> ConfigureBotApiAndRefreshToken(this INullinsideContext db,
+    ITwitchApiProxy api, CancellationToken stoppingToken = new()) {
     // Get the bot user's information.
     User? botUser = await db.Users.AsNoTracking()
       .FirstOrDefaultAsync(u => u.TwitchId == Constants.BotId, stoppingToken);
@@ -77,7 +91,7 @@ public static class NullinsideContextExtensions {
       throw new Exception("No bot user in database");
     }
 
-    return await GetApiAndRefreshToken(db, botUser, stoppingToken);
+    return await ConfigureApiAndRefreshToken(db, botUser, api, stoppingToken);
   }
 
   /// <summary>

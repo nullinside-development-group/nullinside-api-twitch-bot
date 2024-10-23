@@ -54,13 +54,20 @@ public class TwitchChatMessageMonitorConsumer : IDisposable {
   private bool _poisonPill;
 
   /// <summary>
+  /// The twitch api.
+  /// </summary>
+  private readonly ITwitchApiProxy _api;
+
+  /// <summary>
   ///   Initializes a new instance of the <see cref="TwitchChatMessageMonitorConsumer" /> class.
   /// </summary>
   /// <param name="db">The database.</param>
+  /// <param name="api">The twitch api.</param>
   /// <param name="queue">The non-priority queue to scan messages from.</param>
-  public TwitchChatMessageMonitorConsumer(INullinsideContext db, BlockingCollection<ChatMessage> queue) {
+  public TwitchChatMessageMonitorConsumer(INullinsideContext db, ITwitchApiProxy api, BlockingCollection<ChatMessage> queue) {
     _db = db;
     _queue = queue;
+    _api = api;
 
     _thread = new Thread(MainLoop) {
       IsBackground = true,
@@ -138,7 +145,7 @@ public class TwitchChatMessageMonitorConsumer : IDisposable {
           }
 
           // Get the bot proxy
-          TwitchApiProxy? botProxy = await _db.GetBotApiAndRefreshToken();
+          ITwitchApiProxy? botProxy = await _db.ConfigureBotApiAndRefreshToken(this._api);
           if (null == botProxy) {
             continue;
           }

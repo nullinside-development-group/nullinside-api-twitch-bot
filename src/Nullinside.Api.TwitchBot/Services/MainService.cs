@@ -80,6 +80,11 @@ public class MainService : BackgroundService {
   private readonly IServiceScopeFactory _serviceScopeFactory;
 
   /// <summary>
+  /// The twitch api.
+  /// </summary>
+  private readonly ITwitchApiProxy _api;
+
+  /// <summary>
   ///   Initializes a new instance of the <see cref="MainService" /> class.
   /// </summary>
   /// <param name="serviceScopeFactory">The service scope factory.</param>
@@ -87,7 +92,8 @@ public class MainService : BackgroundService {
     _serviceScopeFactory = serviceScopeFactory;
     _scope = _serviceScopeFactory.CreateScope();
     _db = _scope.ServiceProvider.GetRequiredService<INullinsideContext>();
-    _chatMessageConsumer = new TwitchChatMessageMonitorConsumer(_db, _receivedMessageProcessingQueue);
+    _api = _scope.ServiceProvider.GetRequiredService<ITwitchApiProxy>();
+    _chatMessageConsumer = new TwitchChatMessageMonitorConsumer(_db, _api, _receivedMessageProcessingQueue);
   }
 
   /// <summary>
@@ -98,13 +104,13 @@ public class MainService : BackgroundService {
     return Task.Run(async () => {
       while (!stoppingToken.IsCancellationRequested) {
         try {
-          TwitchApiProxy? botApi = await _db.GetBotApiAndRefreshToken(stoppingToken);
-          if (null == botApi || !await botApi.IsValid(stoppingToken)) {
+          ITwitchApiProxy? botApi = await _db.ConfigureBotApiAndRefreshToken(_api, stoppingToken);
+          if (null == botApi || !await botApi.GetAccessTokenIsValid(stoppingToken)) {
             throw new Exception("Unable to log in as bot user");
           }
 
           TwitchClientProxy.Instance.TwitchUsername = Constants.BotUsername;
-          TwitchClientProxy.Instance.TwitchOAuthToken = botApi.AccessToken;
+          TwitchClientProxy.Instance.TwitchOAuthToken = botApi.OAuth?.AccessToken;
 
           _botRules = AppDomain.CurrentDomain.GetAssemblies()
             .SelectMany(a => a.GetTypes())
@@ -148,16 +154,16 @@ public class MainService : BackgroundService {
               throw new Exception("No bot user in database");
             }
 
-            TwitchApiProxy? botApi = await db.GetApiAndRefreshToken(botUser, stoppingToken);
+            ITwitchApiProxy? botApi = await db.ConfigureApiAndRefreshToken(botUser, this._api, stoppingToken);
             if (null != botApi) {
               // Trim channels that aren't live
-              IEnumerable<string> liveUsers = await botApi.GetLiveChannels(usersWithBotEnabled
+              IEnumerable<string> liveUsers = await botApi.GetChannelsLive(usersWithBotEnabled
                 .Where(u => null != u.TwitchId)
                 .Select(u => u.TwitchId)!);
               usersWithBotEnabled = usersWithBotEnabled.Where(u => liveUsers.Contains(u.TwitchId)).ToList();
 
               // Trim channels we aren't a mod in
-              IEnumerable<TwitchModeratedChannel> moddedChannels = await botApi.GetChannelsWeMod(Constants.BotId);
+              IEnumerable<TwitchModeratedChannel> moddedChannels = await botApi.GetUserModChannels(Constants.BotId);
               usersWithBotEnabled = usersWithBotEnabled
                 .Where(u => moddedChannels
                   .Select(m => m.broadcaster_id)
@@ -284,7 +290,7 @@ public class MainService : BackgroundService {
     using (IServiceScope scope = _serviceScopeFactory.CreateAsyncScope()) {
       await using (var db = scope.ServiceProvider.GetRequiredService<INullinsideContext>()) {
         // Get the API
-        TwitchApiProxy? botApi = await db.GetApiAndRefreshToken(botUser, stoppingToken);
+        ITwitchApiProxy? botApi = await db.ConfigureApiAndRefreshToken(botUser, this._api, stoppingToken);
         if (null == _botRules || null == user.TwitchConfig || null == botApi) {
           return;
         }

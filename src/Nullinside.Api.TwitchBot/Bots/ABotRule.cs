@@ -30,7 +30,7 @@ public abstract class ABotRule : IBotRule {
   /// <param name="db">The database.</param>
   /// <param name="stoppingToken">The cancellation token.</param>
   /// <returns>An asynchronous task.</returns>
-  public abstract Task Handle(User user, TwitchUserConfig config, TwitchApiProxy botProxy,
+  public abstract Task Handle(User user, TwitchUserConfig config, ITwitchApiProxy botProxy,
     INullinsideContext db, CancellationToken stoppingToken = new());
 
   /// <summary>
@@ -44,7 +44,7 @@ public abstract class ABotRule : IBotRule {
   /// <param name="reason">The reason for the ban.</param>
   /// <param name="stoppingToken">The cancellation token.</param>
   /// <returns>A collection of confirmed banned users.</returns>
-  protected virtual async Task<IEnumerable<BannedUser>?> BanOnce(TwitchApiProxy botProxy, INullinsideContext db,
+  protected virtual async Task<IEnumerable<BannedUser>?> BanOnce(ITwitchApiProxy botProxy, INullinsideContext db,
     string channelId, IEnumerable<(string Id, string Username)> users, string reason,
     CancellationToken stoppingToken = new()) {
     // Get the list of everyone to ban
@@ -68,7 +68,7 @@ public abstract class ABotRule : IBotRule {
 
     // Perform the ban and get the list of people actually banned
     IEnumerable<BannedUser> confirmedBans =
-      await botProxy.BanUsers(channelId, Constants.BotId, bansToTry, reason, stoppingToken);
+      await botProxy.BanChannelUsers(channelId, Constants.BotId, bansToTry, reason, stoppingToken);
 
     await db.SaveTwitchBans(channelId, users, reason, stoppingToken);
     return confirmedBans;

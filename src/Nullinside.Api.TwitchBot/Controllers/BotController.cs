@@ -8,6 +8,7 @@ using Microsoft.EntityFrameworkCore;
 using Nullinside.Api.Common.Twitch;
 using Nullinside.Api.Model;
 using Nullinside.Api.Model.Ddl;
+using Nullinside.Api.TwitchBot.Model;
 
 using TwitchLib.Api.Helix.Models.Moderation.GetModerators;
 
@@ -49,11 +50,12 @@ public class BotController : ControllerBase {
   /// <summary>
   ///   Checks if the bot account is a moderator.
   /// </summary>
+  /// <param name="api">The twitch api.</param>
   /// <param name="token">The cancellation token.</param>
   /// <returns>True if they are a mod, false otherwise.</returns>
   [HttpGet]
   [Route("mod")]
-  public async Task<IActionResult> IsMod(CancellationToken token) {
+  public async Task<IActionResult> IsMod([FromServices] ITwitchApiProxy api, CancellationToken token = new()) {
     Claim? userId = HttpContext.User.Claims.FirstOrDefault(c => c.Type == ClaimTypes.UserData);
     if (null == userId) {
       return Unauthorized();
@@ -64,9 +66,9 @@ public class BotController : ControllerBase {
         null == user.TwitchTokenExpiration || null == user.TwitchId) {
       return Unauthorized();
     }
-
-    var api = new TwitchApiProxy(user.TwitchToken, user.TwitchRefreshToken, user.TwitchTokenExpiration.Value);
-    IEnumerable<Moderator> mods = await api.GetMods(user.TwitchId, token);
+    
+    api.Configure(user);
+    IEnumerable<Moderator> mods = await api.GetChannelMods(user.TwitchId, token);
     return Ok(new {
       isMod = null != mods.FirstOrDefault(m =>
         string.Equals(m.UserId, Constants.BotId, StringComparison.InvariantCultureIgnoreCase))
@@ -76,11 +78,12 @@ public class BotController : ControllerBase {
   /// <summary>
   ///   Mods the bot account.
   /// </summary>
+  /// <param name="api">The twitch api.</param>
   /// <param name="token">The cancellation token.</param>
   /// <returns>True if they are a mod, false otherwise.</returns>
   [HttpPost]
   [Route("mod")]
-  public async Task<IActionResult> ModBotAccount(CancellationToken token) {
+  public async Task<IActionResult> ModBotAccount([FromServices] ITwitchApiProxy api, CancellationToken token) {
     Claim? userId = HttpContext.User.Claims.FirstOrDefault(c => c.Type == ClaimTypes.UserData);
     if (null == userId) {
       return Unauthorized();
@@ -91,9 +94,9 @@ public class BotController : ControllerBase {
         null == user.TwitchTokenExpiration || null == user.TwitchId) {
       return Unauthorized();
     }
-
-    var api = new TwitchApiProxy(user.TwitchToken, user.TwitchRefreshToken, user.TwitchTokenExpiration.Value);
-    bool success = await api.ModAccount(user.TwitchId, Constants.BotId, token);
+    
+    api.Configure(user);
+    bool success = await api.AddChannelMod(user.TwitchId, Constants.BotId, token);
     return Ok(success);
   }
 
