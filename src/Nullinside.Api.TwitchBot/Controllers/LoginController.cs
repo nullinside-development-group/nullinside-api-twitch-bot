@@ -6,6 +6,7 @@ using Microsoft.AspNetCore.Mvc;
 using Nullinside.Api.Common.Twitch;
 using Nullinside.Api.Model;
 using Nullinside.Api.Model.Shared;
+using Nullinside.Api.Shared.Support;
 
 namespace Nullinside.Api.TwitchBot.Controllers;
 
@@ -56,23 +57,28 @@ public class LoginController : ControllerBase {
   /// </returns>
   [AllowAnonymous]
   [HttpGet]
-  [Route("twitch-login")]
   public async Task<IActionResult> TwitchLogin([FromQuery] string code, [FromServices] ITwitchApiProxy api, CancellationToken token) {
     string? siteUrl = _configuration.GetValue<string>("Api:SiteUrl");
     if (null == await api.CreateAccessToken(code, token)) {
-      return Redirect($"{siteUrl}/twitch-bot/login?error=3");
+      return Redirect($"{siteUrl}/twitch-bot/config?error={TwitchBotLoginErrors.TwitchErrorWithToken}");
     }
 
     string? email = await api.GetUserEmail(token);
     if (string.IsNullOrWhiteSpace(email)) {
-      return Redirect($"{siteUrl}/twitch-bot/login?error=4");
+      return Redirect($"{siteUrl}/twitch-bot/config?error={TwitchBotLoginErrors.TwitchAccountHasNoEmail}");
     }
 
-    string? bearerToken = await UserHelpers.GetTokenAndSaveToDatabase(_dbContext, email, token);
+    (string? id, string? username) user = await api.GetUser(token);
+    if (string.IsNullOrWhiteSpace(user.username) || string.IsNullOrWhiteSpace(user.id)) {
+      return Redirect($"{siteUrl}/twitch-bot/config?error={TwitchBotLoginErrors.InternalError}");
+    }
+
+    string? bearerToken = await UserHelpers.GetTokenAndSaveToDatabase(_dbContext, email, token, api.OAuth?.AccessToken,
+      api.OAuth?.RefreshToken, api.OAuth?.ExpiresUtc, user.username, user.id);
     if (string.IsNullOrWhiteSpace(bearerToken)) {
-      return Redirect($"{siteUrl}/twitch-bot/login?error=2");
+      return Redirect($"{siteUrl}/twitch-bot/config?error={TwitchBotLoginErrors.InternalError}");
     }
 
-    return Redirect($"{siteUrl}/twitch-bot/login?token={bearerToken}");
+    return Redirect($"{siteUrl}/twitch-bot/config?token={bearerToken}");
   }
 }

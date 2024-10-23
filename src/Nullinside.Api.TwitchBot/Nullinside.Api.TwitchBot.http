@@ -1,4 +1,4 @@
-@Nullinside.Api.TwitchBot_HostAddress = http://localhost:5086
+@Nullinside.Api.TwitchBot_HostAddress = http://localhost:5941
 
 GET {{Nullinside.Api.TwitchBot_HostAddress}}/weatherforecast/
 Accept: application/json
