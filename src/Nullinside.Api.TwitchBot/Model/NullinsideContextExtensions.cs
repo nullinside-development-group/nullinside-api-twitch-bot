@@ -46,11 +46,6 @@ public static class NullinsideContextExtensions {
     }
 
     await db.UpdateOAuthInDatabase(user.Id, api.OAuth, stoppingToken);
-    if (Constants.BotId.Equals(user.TwitchId, StringComparison.InvariantCultureIgnoreCase)) {
-      TwitchClientProxy.Instance.TwitchUsername = Constants.BotUsername;
-      TwitchClientProxy.Instance.TwitchOAuthToken = api.OAuth.AccessToken;
-    }
-
     return api;
   }
 

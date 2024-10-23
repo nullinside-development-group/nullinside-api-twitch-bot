@@ -30,6 +30,7 @@ builder.Services.AddDbContext<INullinsideContext, NullinsideContext>(optionsBuil
     }), ServiceLifetime.Transient);
 builder.Services.AddScoped<IAuthorizationHandler, BasicAuthorizationHandler>();
 builder.Services.AddScoped<ITwitchApiProxy, TwitchApiProxy>();
+builder.Services.AddSingleton<ITwitchClientProxy>(_ => TwitchClientProxy.Instance);
 builder.Services.AddHostedService<MainService>();
 builder.Services.AddAuthentication()
   .AddScheme<AuthenticationSchemeOptions, BasicAuthenticationHandler>("Bearer", _ => { });

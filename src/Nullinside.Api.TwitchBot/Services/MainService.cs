@@ -85,6 +85,11 @@ public class MainService : BackgroundService {
   private readonly ITwitchApiProxy _api;
 
   /// <summary>
+  /// The twitch client for sending/receiving chat messages.
+  /// </summary>
+  private readonly ITwitchClientProxy _client;
+
+  /// <summary>
   ///   Initializes a new instance of the <see cref="MainService" /> class.
   /// </summary>
   /// <param name="serviceScopeFactory">The service scope factory.</param>
@@ -93,6 +98,7 @@ public class MainService : BackgroundService {
     _scope = _serviceScopeFactory.CreateScope();
     _db = _scope.ServiceProvider.GetRequiredService<INullinsideContext>();
     _api = _scope.ServiceProvider.GetRequiredService<ITwitchApiProxy>();
+    _client = _scope.ServiceProvider.GetRequiredService<ITwitchClientProxy>();
     _chatMessageConsumer = new TwitchChatMessageMonitorConsumer(_db, _api, _receivedMessageProcessingQueue);
   }
 
@@ -109,8 +115,8 @@ public class MainService : BackgroundService {
             throw new Exception("Unable to log in as bot user");
           }
 
-          TwitchClientProxy.Instance.TwitchUsername = Constants.BotUsername;
-          TwitchClientProxy.Instance.TwitchOAuthToken = botApi.OAuth?.AccessToken;
+          this._client.TwitchUsername = Constants.BotUsername;
+          this._client.TwitchOAuthToken = botApi.OAuth?.AccessToken;
 
           _botRules = AppDomain.CurrentDomain.GetAssemblies()
             .SelectMany(a => a.GetTypes())
@@ -133,7 +139,7 @@ public class MainService : BackgroundService {
   ///   The starting point for running the bots' functionality.
   /// </summary>
   /// <param name="stoppingToken">The stopping token.</param>
-  private async Task Main(CancellationToken stoppingToken) {
+  private async Task Main(CancellationToken stoppingToken = new()) {
     try {
       while (!stoppingToken.IsCancellationRequested) {
         using (IServiceScope scope = _serviceScopeFactory.CreateAsyncScope()) {
@@ -174,8 +180,8 @@ public class MainService : BackgroundService {
               // its chat limits so that "verified bots" like us don't get special treatment anymore. The only thing
               // that skips the chat limits is if it's a channel you're a mod in.
               foreach (TwitchModeratedChannel channel in moddedChannels) {
-                await TwitchClientProxy.Instance.AddMessageCallback(channel.broadcaster_login, OnTwitchMessageReceived);
-                await TwitchClientProxy.Instance.AddBannedCallback(channel.broadcaster_login, OnTwitchBanReceived);
+                await this._client.AddMessageCallback(channel.broadcaster_login, OnTwitchMessageReceived);
+                await this._client.AddBannedCallback(channel.broadcaster_login, OnTwitchBanReceived);
               }
             }
 
