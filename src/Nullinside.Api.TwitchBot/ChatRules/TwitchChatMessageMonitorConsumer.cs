@@ -154,7 +154,7 @@ public class TwitchChatMessageMonitorConsumer : IDisposable {
           foreach (IChatRule rule in rules) {
             try {
               if (rule.ShouldRun(user.TwitchConfig)) {
-                if (!await rule.Handle(user.TwitchId, botProxy, message, _db)) {
+                if (!await rule.Handle(user.TwitchId, botProxy, new TwitchChatMessage(message), _db)) {
                   break;
                 }
               }

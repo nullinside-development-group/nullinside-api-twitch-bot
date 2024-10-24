@@ -16,7 +16,7 @@ public abstract class AChatRule : IChatRule {
   public abstract bool ShouldRun(TwitchUserConfig config);
 
   /// <inheritdoc />
-  public abstract Task<bool> Handle(string channelId, ITwitchApiProxy botProxy, ChatMessage message,
+  public abstract Task<bool> Handle(string channelId, ITwitchApiProxy botProxy, TwitchChatMessage message,
     INullinsideContext db, CancellationToken stoppingToken = new());
 
   /// <summary>
