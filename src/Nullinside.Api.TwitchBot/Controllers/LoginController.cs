@@ -4,9 +4,9 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 using Nullinside.Api.Common.Twitch;
+using Nullinside.Api.Common.Twitch.Support;
 using Nullinside.Api.Model;
 using Nullinside.Api.Model.Shared;
-using Nullinside.Api.Shared.Support;
 
 namespace Nullinside.Api.TwitchBot.Controllers;
 
@@ -73,7 +73,7 @@ public class LoginController : ControllerBase {
       return Redirect($"{siteUrl}/twitch-bot/config?error={TwitchBotLoginErrors.InternalError}");
     }
 
-    string? bearerToken = await UserHelpers.GetTokenAndSaveToDatabase(_dbContext, email, token, api.OAuth?.AccessToken,
+    string? bearerToken = await UserHelpers.GenerateTokenAndSaveToDatabase(_dbContext, email, token, api.OAuth?.AccessToken,
       api.OAuth?.RefreshToken, api.OAuth?.ExpiresUtc, user.username, user.id);
     if (string.IsNullOrWhiteSpace(bearerToken)) {
       return Redirect($"{siteUrl}/twitch-bot/config?error={TwitchBotLoginErrors.InternalError}");
