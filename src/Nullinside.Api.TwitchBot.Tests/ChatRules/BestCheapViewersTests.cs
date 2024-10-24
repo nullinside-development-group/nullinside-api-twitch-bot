@@ -1,12 +1,18 @@
 using Moq;
 using Nullinside.Api.Common.Twitch;
-using Nullinside.Api.Model;
 using Nullinside.Api.TwitchBot.ChatRules;
-using TwitchLib.Client.Models;
 
 namespace Nullinside.Api.TwitchBot.Tests.ChatRules;
 
-public class BestCheapViewersTests : AChatRuleUnitTestBase<BestCheapViewers> {
+/// <summary>
+///     Tests the <see cref="BestCheapViewers" /> class.
+/// </summary>
+public class BestCheapViewersTests : AChatRuleUnitTestBase<BestCheapViewers>
+{
+    /// <summary>
+    ///     Tests strings that have been typed in chats.
+    /// </summary>
+    /// <param name="badString">The string that should fail.</param>
     [Test]
     [TestCase("Best viewers on ***")]
     [TestCase("Best  viewers on ***")]
@@ -28,9 +34,9 @@ public class BestCheapViewersTests : AChatRuleUnitTestBase<BestCheapViewers> {
         var rule = new BestCheapViewers();
         var botProxy = new Mock<ITwitchApiProxy>();
         var chat = new TwitchChatMessage(true, badString, "123", "456");
-        
+
         // Process the message and assert that we fail the message.
-        var result = await rule.Handle("123", botProxy.Object, chat, this._db);
+        var result = await rule.Handle("123", botProxy.Object, chat, _db);
         Assert.That(result, Is.False);
     }
 }
