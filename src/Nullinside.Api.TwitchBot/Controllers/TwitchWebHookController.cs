@@ -25,8 +25,10 @@ public class TwitchWebHookController : ControllerBase {
   /// <returns></returns>
   [HttpPost]
   [Route("chat")]
-  public IActionResult TwitchChatMessageCallback(string stuff, CancellationToken token) {
-    _log.Info(stuff);
+  public async Task<IActionResult> TwitchChatMessageCallback(CancellationToken token) {
+    using StreamReader stream = new StreamReader(this.HttpContext.Request.Body);
+    string stuff = await stream.ReadToEndAsync(token);
+    _log.Info($"TwitchChatMessageCallback: {stuff}");
     return Ok(true);
   }
 }
