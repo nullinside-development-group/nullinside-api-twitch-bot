@@ -2,6 +2,7 @@ using System.Security.Claims;
 
 using log4net;
 
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 
@@ -131,6 +132,24 @@ public class BotController : ControllerBase {
       IsEnabled = config.Enabled,
       BanKnownBots = config.BanKnownBots
     });
+  }
+  
+  /// <summary>
+  ///   Gets the timestamp of the last time a chat message was received.
+  /// </summary>
+  /// <param name="token">The cancellation token.</param>
+  /// <returns>The timestamp of the last message received.</returns>
+  [AllowAnonymous]
+  [HttpGet]
+  [Route("chat/timestamp")]
+  public async Task<IActionResult> GetLastChatTimestamp(CancellationToken token) {
+    var message =
+      await _dbContext.TwitchUserChatLogs.OrderByDescending(c => c.Timestamp).FirstOrDefaultAsync(token);
+    if (null == message) {
+      return StatusCode(500);
+    }
+
+    return Ok(message.Timestamp);
   }
 
   /// <summary>
