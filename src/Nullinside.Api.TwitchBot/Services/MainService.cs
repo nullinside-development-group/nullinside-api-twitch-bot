@@ -162,6 +162,9 @@ public class MainService : BackgroundService {
 
             ITwitchApiProxy? botApi = await db.ConfigureApiAndRefreshToken(botUser, this._api, stoppingToken);
             if (null != botApi) {
+              // Ensure the twitch client has the most up-to-date password
+              this._client.TwitchOAuthToken = botApi.OAuth?.AccessToken;
+              
               // Trim channels that aren't live
               IEnumerable<string> liveUsers = await botApi.GetChannelsLive(usersWithBotEnabled
                 .Where(u => null != u.TwitchId)
