@@ -10,7 +10,7 @@ namespace Nullinside.Api.TwitchBot.ChatRules;
 ///   Handles the "nezhna dot com" bots.
 /// </summary>
 public class Nezhna : AChatRule {
-  private const string SPAM = "Visit nezhna dot com com to boost your viewers and climb the Twitch rankings. Join thousands of successful streamers now!";
+  private const string SPAM = "nezhna";
 
   /// <inheritdoc />
   public override bool ShouldRun(TwitchUserConfig config) {
@@ -24,11 +24,7 @@ public class Nezhna : AChatRule {
       return true;
     }
 
-    // The number of spaces per message may chance, so normalize that and lowercase it for comparison.
-    string normalized = string.Join(' ', message.Message.Split(" ").Where(s => !string.IsNullOrWhiteSpace(s)))
-      .ToLowerInvariant();
-
-    if (normalized.StartsWith(SPAM, StringComparison.InvariantCultureIgnoreCase)) {
+    if (message.Message.Contains(SPAM, StringComparison.InvariantCultureIgnoreCase)) {
       await BanAndLog(channelId, botProxy, new[] { (message.UserId, message.Username) },
         "[Bot] Spam (Nezhna)", db, stoppingToken);
       return false;

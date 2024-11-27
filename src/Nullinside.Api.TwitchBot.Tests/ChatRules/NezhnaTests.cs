@@ -14,6 +14,8 @@ public class NezhnaTests : AChatRuleUnitTestBase<Nezhna> {
   /// </summary>
   /// <param name="badString">The string that should fail.</param>
   [Test]
+  [TestCase("Visit nezhna .com and watch your channel grow today!  @gG6SC5d3")]
+  [TestCase("Visit nezhna dot com to boost your viewers and climb the Twitch rankings. Join thousands of successful streamers now!  @0tlVpgrw")]
   [TestCase("Visit nezhna dot com com to boost your viewers and climb the Twitch rankings. Join thousands of successful streamers now!  @7xgkq3EK")]
   public async Task TestKnownStrings(string badString) {
     var rule = new Nezhna();
