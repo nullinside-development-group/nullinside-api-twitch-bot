@@ -13,7 +13,8 @@ public class Discord : AChatRule {
   private readonly string[] KNOWN_PHRASES = [
     "add me on discord",
     "my username is",
-    "my discord username is"
+    "my discord username is",
+    "connect on discord"
   ];
 
   /// <inheritdoc />
