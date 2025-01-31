@@ -31,7 +31,7 @@ public static class Constants {
     "sery_bot", "buttsbot", "songlistbot", "frostytoolsdotcom",
     "kofistreambot", "lumiastream", "botrixoficial", "fossabot",
     "wzbot", "rainmaker", "streamstickers", "tangiabot", "dixperbot",
-    "trackerggbot", "creatisbot"
+    "trackerggbot", "creatisbot", "day_walker78"
   };
 
   /// <summary>
