@@ -1,8 +1,10 @@
 using Moq;
 
 using Nullinside.Api.Common.Twitch;
-using Nullinside.Api.Model.Ddl;
 using Nullinside.Api.TwitchBot.ChatRules;
+using Nullinside.Api.TwitchBot.Model;
+
+using TwitchUserConfig = Nullinside.Api.Model.Ddl.TwitchUserConfig;
 
 namespace Nullinside.Api.TwitchBot.Tests.ChatRules;
 
