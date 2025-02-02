@@ -152,6 +152,13 @@ public class MainService : BackgroundService {
             if (null == usersWithBotEnabled) {
               continue;
             }
+            
+            // Get the list of users that are banned.
+            List<User>? bannedUsers = await GetBannedUsers(db, stoppingToken);
+            if (null == bannedUsers) {
+              bannedUsers = Enumerable.Empty<User>().ToList();
+            }
+            var bannedUserIds = bannedUsers.Select(u => u.TwitchId).ToList();
 
             // Get the bot user's information.
             User? botUser = await db.Users.AsNoTracking()
@@ -173,6 +180,8 @@ public class MainService : BackgroundService {
 
               // Trim channels we aren't a mod in
               IEnumerable<TwitchModeratedChannel> moddedChannels = await botApi.GetUserModChannels(Constants.BotId);
+              moddedChannels = moddedChannels.Where(m => !bannedUserIds.Contains(m.broadcaster_id)).ToList();
+              
               usersWithBotEnabled = usersWithBotEnabled
                 .Where(u => moddedChannels
                   .Select(m => m.broadcaster_id)
@@ -281,6 +290,23 @@ public class MainService : BackgroundService {
       .AsNoTracking()
       .ToListAsync(stoppingToken);
   }
+  
+  /// <summary>
+  ///   Retrieve all users that are banned from using the bot.
+  /// </summary>
+  /// <param name="db">The database.</param>
+  /// <param name="stoppingToken">The stopping token.</param>
+  /// <returns>The list of users with the bot enabled.</returns>
+  private async Task<List<User>?> GetBannedUsers(INullinsideContext db, CancellationToken stoppingToken) {
+    return await
+      (from user in db.Users
+        orderby user.TwitchLastScanned
+        where user.TwitchId != Constants.BotId &&
+              user.IsBanned
+        select user)
+      .AsNoTracking()
+      .ToListAsync(stoppingToken);
+  }
 
   /// <summary>
   ///   Performs the scan on a user.
@@ -299,8 +325,8 @@ public class MainService : BackgroundService {
     using (IServiceScope scope = _serviceScopeFactory.CreateAsyncScope()) {
       await using (var db = scope.ServiceProvider.GetRequiredService<INullinsideContext>()) {
         // Get the API
-        ITwitchApiProxy? botApi = await db.ConfigureApiAndRefreshToken(botUser, this._api, stoppingToken);
-        if (null == _botRules || null == user.TwitchConfig || null == botApi) {
+        this._api.Configure(botUser);
+        if (null == _botRules || null == user.TwitchConfig) {
           return;
         }
 
@@ -308,7 +334,7 @@ public class MainService : BackgroundService {
         foreach (IBotRule rule in _botRules) {
           try {
             if (rule.ShouldRun(user.TwitchConfig)) {
-              await rule.Handle(user, user.TwitchConfig, botApi, db, stoppingToken);
+              await rule.Handle(user, user.TwitchConfig, this._api, db, stoppingToken);
             }
           }
           catch (Exception e) {

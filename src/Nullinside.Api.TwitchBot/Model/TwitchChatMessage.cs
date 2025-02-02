@@ -2,7 +2,7 @@ using System.Diagnostics.CodeAnalysis;
 
 using TwitchLib.Client.Models;
 
-namespace Nullinside.Api.TwitchBot.ChatRules;
+namespace Nullinside.Api.TwitchBot.Model;
 
 /// <summary>
 ///   This wrapper exists for unit testing purposes. It's nice passing the <see cref="ChatMessage" /> around only because
