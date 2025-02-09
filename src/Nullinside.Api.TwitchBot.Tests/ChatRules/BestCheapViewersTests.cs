@@ -15,6 +15,8 @@ public class BestCheapViewersTests : AChatRuleUnitTestBase<BestCheapViewers> {
   /// </summary>
   /// <param name="badString">The string that should fail.</param>
   [Test]
+  [TestCase("C\u032dheap viewe\u034crs on\u0306 vwrpro.ru @8v2JcQFL")]
+  [TestCase("Ch\u031ae\u0345ap viewers on ***  @STGPMoLg")]
   [TestCase("Best\u036e vie\u0350wers \u0337on ***")]
   [TestCase("Best viewers on ***")]
   [TestCase("Best  viewers on ***")]

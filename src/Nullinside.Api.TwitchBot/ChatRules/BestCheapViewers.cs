@@ -47,7 +47,7 @@ public class BestCheapViewers : AChatRule {
         int offset = 0;
         for (int i = 0; i < expected.Length; i++) {
           // If this is a normal character it should be in the correct position.
-          if (normalized[i + offset] == expected[i]) {
+          if (i + offset < normalized.Length && normalized[i + offset] == expected[i]) {
             ++matches;
           } 
           // If this is an accent mark then the next character should match and the whole string we're evalutating
