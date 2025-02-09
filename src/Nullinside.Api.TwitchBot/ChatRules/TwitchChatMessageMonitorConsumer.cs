@@ -4,6 +4,8 @@ using log4net;
 
 using Microsoft.EntityFrameworkCore;
 
+using Mysqlx.Expr;
+
 using Nullinside.Api.Common.Twitch;
 using Nullinside.Api.Model;
 using Nullinside.Api.Model.Ddl;
@@ -160,7 +162,7 @@ public class TwitchChatMessageMonitorConsumer : IDisposable {
               }
             }
             catch (Exception e) {
-              LOG.Error($"{channel}: Failed to evaluate rule", e);
+              LOG.Error($"{channel}: Failed to evaluate rule on {message.Username}({message.UserId}): {message.Message}", e);
             }
           }
         }
