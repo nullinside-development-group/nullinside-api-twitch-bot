@@ -1,5 +1,11 @@
-﻿using Microsoft.EntityFrameworkCore;
+﻿using System.Diagnostics;
 
+using log4net;
+
+using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Storage;
+
+using Nullinside.Api.Common;
 using Nullinside.Api.Common.Twitch;
 using Nullinside.Api.Model;
 using Nullinside.Api.Model.Ddl;
@@ -11,13 +17,23 @@ namespace Nullinside.Api.TwitchBot.Model;
 /// </summary>
 public static class NullinsideContextExtensions {
   /// <summary>
+  ///   The database lock name to use as a lock in the MySQL database.
+  /// </summary>
+  private const string BOT_REFRESH_TOKEN_LOCK_NAME = "bot_refresh_token";
+
+  /// <summary>
+  ///   The logger.
+  /// </summary>
+  private static readonly ILog _log = LogManager.GetLogger(typeof(NullinsideContextExtensions));
+
+  /// <summary>
   ///   Gets a twitch api proxy.
   /// </summary>
   /// <param name="user">The user to configure the proxy as.</param>
   /// <param name="api">The twitch api object currently in use.</param>
   /// <returns>The twitch api.</returns>
   public static void Configure(this ITwitchApiProxy api, User user) {
-    api.OAuth = new() {
+    api.OAuth = new TwitchAccessToken {
       AccessToken = user.TwitchToken,
       RefreshToken = user.TwitchRefreshToken,
       ExpiresUtc = user.TwitchTokenExpiration
@@ -36,17 +52,63 @@ public static class NullinsideContextExtensions {
     ITwitchApiProxy api, CancellationToken stoppingToken = new()) {
     api.Configure(user);
 
-    // Refresh its token if necessary.
+    // Use the token we have, if it hasn't expired.
     if (!(DateTime.UtcNow + TimeSpan.FromHours(1) > user.TwitchTokenExpiration)) {
       return api;
     }
 
-    if (null == await api.RefreshAccessToken(stoppingToken) || null == api.OAuth) {
-      return api;
-    }
+    // Database locking requires ExecutionStrategy
+    IExecutionStrategy strat = db.Database.CreateExecutionStrategy();
+    return await strat.ExecuteAsync(async () => {
+      bool failed = false;
 
-    await db.UpdateOAuthInDatabase(user.Id, api.OAuth, stoppingToken);
-    return api;
+      // Database locking requires transaction scope
+      await using IDbContextTransaction scope = await db.Database.BeginTransactionAsync(stoppingToken);
+
+      // Perform the database lock
+      using var dbLock = new DatabaseLock(db);
+      var sw = new Stopwatch();
+      sw.Start();
+      await dbLock.GetLock(BOT_REFRESH_TOKEN_LOCK_NAME, stoppingToken);
+      _log.Info($"bot_refresh_token: {sw.Elapsed}");
+      sw.Stop();
+
+      try {
+        // Get the user with the database lock acquired.
+        User? updatedUser = await db.Users.AsNoTracking().FirstOrDefaultAsync(u => u.Id == user.Id, stoppingToken);
+        if (null == updatedUser) {
+          return null;
+        }
+
+        // Use the token we have, if it hasn't expired.
+        if (!(DateTime.UtcNow + TimeSpan.FromHours(1) > updatedUser.TwitchTokenExpiration)) {
+          api.Configure(updatedUser);
+          return api;
+        }
+
+        // Refresh the token with the Twitch API.
+        TwitchAccessToken? newToken = await api.RefreshAccessToken(stoppingToken);
+        if (null == newToken) {
+          return null;
+        }
+
+        // Update the credentials in the database.
+        await db.UpdateOAuthInDatabase(user.Id, newToken, stoppingToken);
+        return api;
+      }
+      catch {
+        failed = true;
+      }
+      finally {
+        await dbLock.ReleaseLock(BOT_REFRESH_TOKEN_LOCK_NAME, stoppingToken);
+
+        if (!failed) {
+          scope.Commit();
+        }
+      }
+
+      return null;
+    });
   }
 
   /// <summary>
@@ -57,7 +119,7 @@ public static class NullinsideContextExtensions {
   /// <param name="oAuth">The OAuth information.</param>
   /// <param name="stoppingToken">The stopping token.</param>
   /// <returns>The number of state entries written to the database.</returns>
-  public static async Task<int> UpdateOAuthInDatabase(this INullinsideContext db, int userId,
+  private static async Task<int> UpdateOAuthInDatabase(this INullinsideContext db, int userId,
     TwitchAccessToken oAuth, CancellationToken stoppingToken = new()) {
     User? row = await db.Users.FirstOrDefaultAsync(u => u.Id == userId, stoppingToken);
     if (null == row) {
