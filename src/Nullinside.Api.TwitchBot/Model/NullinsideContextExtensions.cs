@@ -161,7 +161,7 @@ public static class NullinsideContextExtensions {
   /// <param name="stoppingToken">The stopping token.</param>
   public static async Task SaveTwitchBans(this INullinsideContext db, string channelId,
     IEnumerable<(string Id, string Username)> bannedUsers, string reason, CancellationToken stoppingToken = new()) {
-    List<string> banUserIds = bannedUsers.Select(b => b.Id).ToList();
+    List<string> banUserIds = bannedUsers.Select(b => b.Id).ToHashSet().ToList();
     HashSet<string?> existingUsers = db.TwitchUser
       .AsNoTracking()
       .Where(u => null != u.TwitchId && banUserIds.Contains(u.TwitchId))
