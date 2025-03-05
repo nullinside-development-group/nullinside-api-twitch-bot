@@ -32,9 +32,19 @@ public class MainService : BackgroundService {
   private static IBotRule[]? _botRules;
 
   /// <summary>
+  ///   The twitch api.
+  /// </summary>
+  private readonly ITwitchApiProxy _api;
+
+  /// <summary>
   ///   Handles the enforcing rules on chat messages.
   /// </summary>
   private readonly TwitchChatMessageMonitorConsumer _chatMessageConsumer;
+
+  /// <summary>
+  ///   The twitch client for sending/receiving chat messages.
+  /// </summary>
+  private readonly ITwitchClientProxy _client;
 
   /// <summary>
   ///   The database.
@@ -80,16 +90,6 @@ public class MainService : BackgroundService {
   private readonly IServiceScopeFactory _serviceScopeFactory;
 
   /// <summary>
-  /// The twitch api.
-  /// </summary>
-  private readonly ITwitchApiProxy _api;
-
-  /// <summary>
-  /// The twitch client for sending/receiving chat messages.
-  /// </summary>
-  private readonly ITwitchClientProxy _client;
-
-  /// <summary>
   ///   Initializes a new instance of the <see cref="MainService" /> class.
   /// </summary>
   /// <param name="serviceScopeFactory">The service scope factory.</param>
@@ -115,8 +115,8 @@ public class MainService : BackgroundService {
             throw new Exception("Unable to log in as bot user");
           }
 
-          this._client.TwitchUsername = Constants.BotUsername;
-          this._client.TwitchOAuthToken = botApi.OAuth?.AccessToken;
+          _client.TwitchUsername = Constants.BotUsername;
+          _client.TwitchOAuthToken = botApi.OAuth?.AccessToken;
 
           _botRules = AppDomain.CurrentDomain.GetAssemblies()
             .SelectMany(a => a.GetTypes())
@@ -152,13 +152,6 @@ public class MainService : BackgroundService {
             if (null == usersWithBotEnabled) {
               continue;
             }
-            
-            // Get the list of users that are banned.
-            List<User>? bannedUsers = await GetBannedUsers(db, stoppingToken);
-            if (null == bannedUsers) {
-              bannedUsers = Enumerable.Empty<User>().ToList();
-            }
-            var bannedUserIds = bannedUsers.Select(u => u.TwitchId).ToList();
 
             // Get the bot user's information.
             User? botUser = await db.Users.AsNoTracking()
@@ -167,11 +160,11 @@ public class MainService : BackgroundService {
               throw new Exception("No bot user in database");
             }
 
-            ITwitchApiProxy? botApi = await db.ConfigureApiAndRefreshToken(botUser, this._api, stoppingToken);
+            ITwitchApiProxy? botApi = await db.ConfigureApiAndRefreshToken(botUser, _api, stoppingToken);
             if (null != botApi) {
               // Ensure the twitch client has the most up-to-date password
-              this._client.TwitchOAuthToken = botApi.OAuth?.AccessToken;
-              
+              _client.TwitchOAuthToken = botApi.OAuth?.AccessToken;
+
               // Trim channels that aren't live
               IEnumerable<string> liveUsers = await botApi.GetChannelsLive(usersWithBotEnabled
                 .Where(u => null != u.TwitchId)
@@ -180,20 +173,20 @@ public class MainService : BackgroundService {
 
               // Trim channels we aren't a mod in
               IEnumerable<TwitchModeratedChannel> moddedChannels = await botApi.GetUserModChannels(Constants.BotId);
-              moddedChannels = moddedChannels.Where(m => !bannedUserIds.Contains(m.broadcaster_id)).ToList();
-              
               usersWithBotEnabled = usersWithBotEnabled
-                .Where(u => moddedChannels
-                  .Select(m => m.broadcaster_id)
-                  .Contains(u.TwitchId))
+                .Where(u => moddedChannels.Select(m => m.broadcaster_id).Contains(u.TwitchId))
                 .ToList();
 
               // Join all the channels we're a mod in. Why do we limit it to channels we are a mod in? Twitch changed
               // its chat limits so that "verified bots" like us don't get special treatment anymore. The only thing
               // that skips the chat limits is if it's a channel you're a mod in.
-              foreach (TwitchModeratedChannel channel in moddedChannels) {
-                await this._client.AddMessageCallback(channel.broadcaster_login, OnTwitchMessageReceived);
-                await this._client.AddBannedCallback(channel.broadcaster_login, OnTwitchBanReceived);
+              foreach (User channel in usersWithBotEnabled) {
+                if (string.IsNullOrWhiteSpace(channel.TwitchUsername)) {
+                  continue;
+                }
+
+                await _client.AddMessageCallback(channel.TwitchUsername, OnTwitchMessageReceived);
+                await _client.AddBannedCallback(channel.TwitchUsername, OnTwitchBanReceived);
               }
             }
 
@@ -290,7 +283,7 @@ public class MainService : BackgroundService {
       .AsNoTracking()
       .ToListAsync(stoppingToken);
   }
-  
+
   /// <summary>
   ///   Retrieve all users that are banned from using the bot.
   /// </summary>
@@ -325,7 +318,7 @@ public class MainService : BackgroundService {
     using (IServiceScope scope = _serviceScopeFactory.CreateAsyncScope()) {
       await using (var db = scope.ServiceProvider.GetRequiredService<INullinsideContext>()) {
         // Get the API
-        this._api.Configure(botUser);
+        _api.Configure(botUser);
         if (null == _botRules || null == user.TwitchConfig) {
           return;
         }
@@ -334,7 +327,7 @@ public class MainService : BackgroundService {
         foreach (IBotRule rule in _botRules) {
           try {
             if (rule.ShouldRun(user.TwitchConfig)) {
-              await rule.Handle(user, user.TwitchConfig, this._api, db, stoppingToken);
+              await rule.Handle(user, user.TwitchConfig, _api, db, stoppingToken);
             }
           }
           catch (Exception e) {
