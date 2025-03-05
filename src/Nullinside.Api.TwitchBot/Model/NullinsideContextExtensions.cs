@@ -168,19 +168,15 @@ public static class NullinsideContextExtensions {
       .On(v => new { v.TwitchId })
       .RunAsync(stoppingToken);
 
-    db.TwitchBan.AddRange(
-      bannedUsers.Select(i => new TwitchBan {
-        ChannelId = channelId,
-        BannedUserTwitchId = i.Id,
-        Reason = reason,
-        Timestamp = DateTime.UtcNow
-      }).ToList());
-
-    // Trying to fix bug?
-    foreach (TwitchBan twitchBan in db.TwitchBan) {
-      db.Entry(twitchBan).State = EntityState.Added;
-    }
-
-    await db.SaveChangesAsync(stoppingToken);
+    await db.TwitchBan.UpsertRange(
+        bannedUsers.Select(i => new TwitchBan {
+          ChannelId = channelId,
+          BannedUserTwitchId = i.Id,
+          Reason = reason,
+          Timestamp = DateTime.UtcNow
+        }).ToList()
+      )
+      .On(v => new { v.ChannelId, v.BannedUserTwitchId, v.Timestamp })
+      .RunAsync(stoppingToken);
   }
 }
