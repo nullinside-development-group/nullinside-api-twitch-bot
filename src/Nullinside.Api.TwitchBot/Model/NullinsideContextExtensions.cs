@@ -174,7 +174,13 @@ public static class NullinsideContextExtensions {
         BannedUserTwitchId = i.Id,
         Reason = reason,
         Timestamp = DateTime.UtcNow
-      }));
+      }).ToList());
+
+    // Trying to fix bug?
+    foreach (TwitchBan twitchBan in db.TwitchBan) {
+      db.Entry(twitchBan).State = EntityState.Added;
+    }
+
     await db.SaveChangesAsync(stoppingToken);
   }
 }
