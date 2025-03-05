@@ -111,13 +111,14 @@ public class TwitchChatMessageMonitorConsumer : IDisposable {
         // Try to get a message from one of the two queues.
         ChatMessage? message;
         _queue.TryTake(out message);
-
+        
         // If we didn't get a message, loop.
         if (null == message) {
           Thread.Sleep(LOOP_TIMEOUT);
           continue;
         }
 
+        LOG.Info("Message received: " + message.Id);
         string? channel = message.Channel;
         try {
           // Sanity check.
