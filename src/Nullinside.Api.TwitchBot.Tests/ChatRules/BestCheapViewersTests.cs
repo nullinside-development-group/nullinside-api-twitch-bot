@@ -15,6 +15,8 @@ public class BestCheapViewersTests : AChatRuleUnitTestBase<BestCheapViewers> {
   /// </summary>
   /// <param name="badString">The string that should fail.</param>
   [Test]
+  [TestCase("B\u0366est vie\u031fwers on streamboo .com ( remove the space )  @IBjZQcD1")]
+  [TestCase("Cheap \u0314Viewers on  streamboo .com ( remove the space )  @kX9lOgg1")]
   [TestCase("B͐est vi̯ewers o͎n on streamboo .com ( remove the space )  @9F3Wnft0")]
   [TestCase("Ch̚eͅap viewers on ***  @STGPMoLg")]
   [TestCase("C̭heap viewe͌rs on̆ ***  @R1QXrXPM")]
