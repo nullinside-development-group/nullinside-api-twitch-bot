@@ -18,7 +18,8 @@ public class Discord : AChatRule {
     "chat with me",
     "my discord username",
     "my username",
-    "connect on discord"
+    "connect on discord",
+    "add up"
   ];
 
   /// <inheritdoc />
