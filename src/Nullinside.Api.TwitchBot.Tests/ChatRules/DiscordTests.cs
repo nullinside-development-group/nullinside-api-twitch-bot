@@ -15,6 +15,7 @@ public class DiscordTests : AChatRuleUnitTestBase<Discord> {
   /// </summary>
   /// <param name="badString">The string that should fail.</param>
   [Test]
+  [TestCase("Hey! Big fan of your content. I’d love to discuss some ideas or just support each other’s growth. Hit me up on Discord: xapar9")]
   [TestCase("Yo bruh \u2764\ufe0f let's sometimes play together and share tips add up on discord \ud83d\udc49 willam0340")]
   [TestCase("Hello mate you stream pretty cool that's why I follow I would love to be a fan of yours if you don't mind kindly add me on Discord: 👉👉lacaster5")]
   [TestCase("Hello, I just recently found your channel and can already tell that your content is great, and I would love to stick with you long term. If you're open to it, I'd be willing to connect with you on Discord. My username is teecash1000")]
