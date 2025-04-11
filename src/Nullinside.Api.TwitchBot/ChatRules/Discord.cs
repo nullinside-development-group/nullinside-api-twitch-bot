@@ -19,7 +19,8 @@ public class Discord : AChatRule {
     "my discord username",
     "my username",
     "connect on discord",
-    "add up"
+    "add up",
+    "hit me up"
   ];
 
   /// <inheritdoc />
