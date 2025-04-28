@@ -133,7 +133,7 @@ public class TwitchChatMessageMonitorConsumer : IDisposable {
               !u.IsBanned &&
               null != u.TwitchConfig &&
               u.TwitchConfig.Enabled &&
-              string.Equals(u.TwitchUsername, message.Channel, StringComparison.InvariantCultureIgnoreCase)
+              u.TwitchUsername == message.Channel
             );
 
           if (null == user?.TwitchConfig || null == user.TwitchId) {
