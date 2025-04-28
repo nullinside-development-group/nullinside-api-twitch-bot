@@ -17,13 +17,16 @@ pipeline {
 				    usernamePassword(credentialsId: 'GitHub PAT', passwordVariable: 'GITHUB_PASSWORD', usernameVariable: 'GITHUB_USERNAME'),
 					usernamePassword(credentialsId: 'MySql', passwordVariable: 'MYSQL_PASSWORD', usernameVariable: 'MYSQL_USERNAME'),
 					string(credentialsId: 'MySqlServer', variable: 'MYSQL_SERVER'),
-                    string(credentialsId: 'TwitchBotClientId', variable: 'TWITCH_BOT_CLIENT_ID'),
-                    string(credentialsId: 'TwitchBotClientSecret', variable: 'TWITCH_BOT_CLIENT_SECRET'),
-                    string(credentialsId: 'TwitchBotClientRedirect', variable: 'TWITCH_BOT_CLIENT_REDIRECT')
+					string(credentialsId: 'TwitchBotClientId', variable: 'TWITCH_BOT_CLIENT_ID'),
+					string(credentialsId: 'TwitchBotClientSecret', variable: 'TWITCH_BOT_CLIENT_SECRET'),
+					string(credentialsId: 'TwitchBotClientRedirect', variable: 'TWITCH_BOT_CLIENT_REDIRECT')
 				]) {
-					sh """
-						bash go.sh 
-					"""
+					script {
+						def statusCode = sh script: "bash go.sh", returnStatus:true
+						if (statusCode != 0) {
+							error "Build Failed"
+						}
+					}
 				}
             }
         }
