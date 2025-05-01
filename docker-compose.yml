@@ -1,6 +1,10 @@
 name: nullinside-api-twitch-bot
 services:
     nullinside-api-twitch-bot:
+        build:
+            context: .
+            tags:
+                - "nullinside-api-twitch-bot:latest"
         logging:
             driver: loki
             options:
