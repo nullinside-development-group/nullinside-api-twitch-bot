@@ -121,7 +121,7 @@ public static class NullinsideContextExtensions {
   /// <returns>The number of state entries written to the database.</returns>
   private static async Task<int> UpdateOAuthInDatabase(this INullinsideContext db, int userId,
     TwitchAccessToken oAuth, CancellationToken stoppingToken = new()) {
-    User? row = await db.Users.FirstOrDefaultAsync(u => u.Id == userId, stoppingToken);
+    User? row = await db.Users.FirstOrDefaultAsync(u => u.Id == userId && !u.IsBanned, stoppingToken);
     if (null == row) {
       return -1;
     }
