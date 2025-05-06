@@ -62,7 +62,7 @@ public class BotController : ControllerBase {
       return Unauthorized();
     }
 
-    User? user = _dbContext.Users.FirstOrDefault(u => u.Id == int.Parse(userId.Value));
+    User? user = _dbContext.Users.FirstOrDefault(u => u.Id == int.Parse(userId.Value) && !u.IsBanned);
     if (null == user || null == user.TwitchToken || null == user.TwitchRefreshToken ||
         null == user.TwitchTokenExpiration || null == user.TwitchId) {
       return Unauthorized();
@@ -90,7 +90,7 @@ public class BotController : ControllerBase {
       return Unauthorized();
     }
 
-    User? user = _dbContext.Users.FirstOrDefault(u => u.Id == int.Parse(userId.Value));
+    User? user = _dbContext.Users.FirstOrDefault(u => u.Id == int.Parse(userId.Value) && !u.IsBanned);
     if (null == user || null == user.TwitchToken || null == user.TwitchRefreshToken ||
         null == user.TwitchTokenExpiration || null == user.TwitchId) {
       return Unauthorized();
@@ -114,7 +114,7 @@ public class BotController : ControllerBase {
       return Unauthorized();
     }
 
-    User? user = await _dbContext.Users.FirstOrDefaultAsync(u => u.Id == int.Parse(userId.Value), token);
+    User? user = await _dbContext.Users.FirstOrDefaultAsync(u => u.Id == int.Parse(userId.Value) && !u.IsBanned, token);
     if (null == user) {
       return Unauthorized();
     }
