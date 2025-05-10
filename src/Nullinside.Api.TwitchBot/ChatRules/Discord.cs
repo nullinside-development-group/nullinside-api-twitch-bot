@@ -14,12 +14,16 @@ namespace Nullinside.Api.TwitchBot.ChatRules;
 public class Discord : AChatRule {
   private readonly string[] KNOWN_PHRASES = [
     "add me",
+    "add my",
+    "add up",
+    "adding me",
+    "adding my",
+    "adding up",
     "message me",
     "chat with me",
     "my discord username",
     "my username",
     "connect on discord",
-    "add up",
     "hit me up"
   ];
 

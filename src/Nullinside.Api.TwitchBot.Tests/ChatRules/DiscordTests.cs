@@ -15,6 +15,11 @@ public class DiscordTests : AChatRuleUnitTestBase<Discord> {
   /// </summary>
   /// <param name="badString">The string that should fail.</param>
   [Test]
+  [TestCase("Add me on discord: heckler80")]
+  [TestCase("Add my discord👉 emmanuel_1345")]
+  [TestCase("could you add me on Discord  My username is 👉fawaz0160. Appreciate it! 😊")]
+  [TestCase("Hello what's up 🥰I love your stream it's very entertaining so I followed you, Got some recommendations that will help you much in improving your stream.. kindly adding up on discord if that's okay:  kings124         Thanks 👍🏿")]
+  [TestCase("Hey! You stream really well 👑I’ll  love to become your dedicated fan and support you. Mind adding me on Discord: laycon0801")]
   [TestCase("Hey! Big fan of your content. I’d love to discuss some ideas or just support each other’s growth. Hit me up on Discord: xapar9")]
   [TestCase("Yo bruh \u2764\ufe0f let's sometimes play together and share tips add up on discord \ud83d\udc49 willam0340")]
   [TestCase("Hello mate you stream pretty cool that's why I follow I would love to be a fan of yours if you don't mind kindly add me on Discord: 👉👉lacaster5")]
