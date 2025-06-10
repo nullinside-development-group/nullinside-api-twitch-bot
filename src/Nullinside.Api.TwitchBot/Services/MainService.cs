@@ -180,13 +180,22 @@ public class MainService : BackgroundService {
               // Join all the channels we're a mod in. Why do we limit it to channels we are a mod in? Twitch changed
               // its chat limits so that "verified bots" like us don't get special treatment anymore. The only thing
               // that skips the chat limits is if it's a channel you're a mod in.
-              foreach (User channel in usersWithBotEnabled) {
-                if (string.IsNullOrWhiteSpace(channel.TwitchUsername)) {
+              var bannedUsers = (await GetBannedUsers(db, stoppingToken))
+                .Where(u => !string.IsNullOrWhiteSpace(u.TwitchId))
+                .Select(u => u.TwitchId!.Trim())
+                .ToHashSet();
+              var allModdedAndNotBannedUsers = moddedChannels
+                .Where(m => !bannedUsers.Contains(m.broadcaster_id));
+              var joinChannels = usersWithBotEnabled
+                .Select(u => u.TwitchUsername)
+                .Concat(allModdedAndNotBannedUsers.Select(j => j.broadcaster_login));
+              foreach (var channel in joinChannels) {
+                if (string.IsNullOrWhiteSpace(channel)) {
                   continue;
                 }
 
-                await _client.AddMessageCallback(channel.TwitchUsername, OnTwitchMessageReceived);
-                await _client.AddBannedCallback(channel.TwitchUsername, OnTwitchBanReceived);
+                await _client.AddMessageCallback(channel, OnTwitchMessageReceived);
+                await _client.AddBannedCallback(channel, OnTwitchBanReceived);
               }
             }
 
@@ -290,7 +299,7 @@ public class MainService : BackgroundService {
   /// <param name="db">The database.</param>
   /// <param name="stoppingToken">The stopping token.</param>
   /// <returns>The list of users with the bot enabled.</returns>
-  private async Task<List<User>?> GetBannedUsers(INullinsideContext db, CancellationToken stoppingToken) {
+  private async Task<List<User>> GetBannedUsers(INullinsideContext db, CancellationToken stoppingToken) {
     return await
       (from user in db.Users
         orderby user.TwitchLastScanned
