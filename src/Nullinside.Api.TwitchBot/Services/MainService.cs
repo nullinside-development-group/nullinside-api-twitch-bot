@@ -24,12 +24,12 @@ public class MainService : BackgroundService {
   /// <summary>
   ///   The amount of time to wait between each scan of the live users, in milliseconds.
   /// </summary>
-  private const int ScanLoopDelayMilliseconds = 10000;
+  private const int SCAN_LOOP_DELAY_MILLISECONDS = 10000;
 
   /// <summary>
   ///   The bot rules to scan with.
   /// </summary>
-  private static IBotRule[]? _botRules;
+  private static IBotRule[]? s_botRules;
 
   /// <summary>
   ///   The twitch api.
@@ -115,10 +115,10 @@ public class MainService : BackgroundService {
             throw new Exception("Unable to log in as bot user");
           }
 
-          _client.TwitchUsername = Constants.BotUsername;
+          _client.TwitchUsername = Constants.BOT_USERNAME;
           _client.TwitchOAuthToken = botApi.OAuth?.AccessToken;
 
-          _botRules = AppDomain.CurrentDomain.GetAssemblies()
+          s_botRules = AppDomain.CurrentDomain.GetAssemblies()
             .SelectMany(a => a.GetTypes())
             .Where(t => typeof(IBotRule).IsAssignableFrom(t) && t is { IsAbstract: false, IsInterface: false })
             .Select(t => Activator.CreateInstance(t) as IBotRule)
@@ -155,7 +155,7 @@ public class MainService : BackgroundService {
 
             // Get the bot user's information.
             User? botUser = await db.Users.AsNoTracking()
-              .FirstOrDefaultAsync(u => u.TwitchId == Constants.BotId, stoppingToken);
+              .FirstOrDefaultAsync(u => u.TwitchId == Constants.BOT_ID, stoppingToken);
             if (null == botUser) {
               throw new Exception("No bot user in database");
             }
@@ -172,7 +172,7 @@ public class MainService : BackgroundService {
               usersWithBotEnabled = usersWithBotEnabled.Where(u => liveUsers.Contains(u.TwitchId)).ToList();
 
               // Trim channels we aren't a mod in
-              IEnumerable<TwitchModeratedChannel> moddedChannels = await botApi.GetUserModChannels(Constants.BotId);
+              IEnumerable<TwitchModeratedChannel> moddedChannels = await botApi.GetUserModChannels(Constants.BOT_ID);
               usersWithBotEnabled = usersWithBotEnabled
                 .Where(u => moddedChannels.Select(m => m.broadcaster_id).Contains(u.TwitchId))
                 .ToList();
@@ -203,7 +203,7 @@ public class MainService : BackgroundService {
         }
 
         // Wait between scans. We don't want to spam the API too much.
-        await Task.Delay(ScanLoopDelayMilliseconds, stoppingToken);
+        await Task.Delay(SCAN_LOOP_DELAY_MILLISECONDS, stoppingToken);
       }
     }
     catch (Exception ex) {
@@ -275,7 +275,7 @@ public class MainService : BackgroundService {
     return await
       (from user in db.Users
         orderby user.TwitchLastScanned
-        where user.TwitchId != Constants.BotId &&
+        where user.TwitchId != Constants.BOT_ID &&
               !user.IsBanned
         select user)
       .Include(u => u.TwitchConfig)
@@ -294,7 +294,7 @@ public class MainService : BackgroundService {
     return await
       (from user in db.Users
         orderby user.TwitchLastScanned
-        where user.TwitchId != Constants.BotId &&
+        where user.TwitchId != Constants.BOT_ID &&
               user.IsBanned
         select user)
       .AsNoTracking()
@@ -309,7 +309,7 @@ public class MainService : BackgroundService {
   /// <param name="stoppingToken">The stopping token.</param>
   private async Task DoScan(User user, User botUser, CancellationToken stoppingToken) {
     // Determine if it's too early for a scan.
-    if (DateTime.UtcNow < user.TwitchLastScanned + Constants.MinimumTimeBetweenScansLive) {
+    if (DateTime.UtcNow < user.TwitchLastScanned + Constants.MINIMUM_TIME_BETWEEN_SCANS_LIVE) {
       return;
     }
 
@@ -319,12 +319,12 @@ public class MainService : BackgroundService {
       await using (var db = scope.ServiceProvider.GetRequiredService<INullinsideContext>()) {
         // Get the API
         _api.Configure(botUser);
-        if (null == _botRules || null == user.TwitchConfig) {
+        if (null == s_botRules || null == user.TwitchConfig) {
           return;
         }
 
         // Run the rules that scan the chats and the accounts.
-        foreach (IBotRule rule in _botRules) {
+        foreach (IBotRule rule in s_botRules) {
           try {
             if (rule.ShouldRun(user.TwitchConfig)) {
               await rule.Handle(user, user.TwitchConfig, _api, db, stoppingToken);

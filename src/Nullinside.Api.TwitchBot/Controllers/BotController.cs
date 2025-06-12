@@ -72,7 +72,7 @@ public class BotController : ControllerBase {
     IEnumerable<Moderator> mods = await api.GetChannelMods(user.TwitchId, token);
     return Ok(new {
       isMod = null != mods.FirstOrDefault(m =>
-        string.Equals(m.UserId, Constants.BotId, StringComparison.InvariantCultureIgnoreCase))
+        string.Equals(m.UserId, Constants.BOT_ID, StringComparison.InvariantCultureIgnoreCase))
     });
   }
 
@@ -97,7 +97,7 @@ public class BotController : ControllerBase {
     }
 
     api.Configure(user);
-    bool success = await api.AddChannelMod(user.TwitchId, Constants.BotId, token);
+    bool success = await api.AddChannelMod(user.TwitchId, Constants.BOT_ID, token);
     return Ok(success);
   }
 

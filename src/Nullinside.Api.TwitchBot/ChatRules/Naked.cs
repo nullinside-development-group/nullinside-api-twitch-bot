@@ -10,8 +10,8 @@ namespace Nullinside.Api.TwitchBot.ChatRules;
 ///   Handles the want to see her naked porn bots.
 /// </summary>
 public class Naked : AChatRule {
-  private const string _spam = "Want to see her naked?";
-  private const string _spam2 = "Want to see me naked?";
+  private const string SPAM = "Want to see her naked?";
+  private const string SPAM2 = "Want to see me naked?";
 
   /// <inheritdoc />
   public override bool ShouldRun(TwitchUserConfig config) {
@@ -22,8 +22,8 @@ public class Naked : AChatRule {
   public override async Task<bool> Handle(string channelId, ITwitchApiProxy botProxy, TwitchChatMessage message,
     INullinsideContext db, CancellationToken stoppingToken = new()) {
     if (message.IsFirstMessage &&
-        (message.Message.TrimStart().StartsWith(_spam, StringComparison.InvariantCultureIgnoreCase) ||
-         message.Message.TrimStart().StartsWith(_spam2, StringComparison.InvariantCultureIgnoreCase))) {
+        (message.Message.TrimStart().StartsWith(SPAM, StringComparison.InvariantCultureIgnoreCase) ||
+         message.Message.TrimStart().StartsWith(SPAM2, StringComparison.InvariantCultureIgnoreCase))) {
       await BanAndLog(channelId, botProxy, new[] { (message.UserId, message.Username) },
         "[Bot] Spam (Naked)", db, stoppingToken);
       return false;

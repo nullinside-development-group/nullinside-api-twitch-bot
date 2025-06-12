@@ -13,7 +13,7 @@ public class IfYouWantViewers : AChatRule {
   /// <summary>
   ///   The strings that we expect to receive if this is a bot.
   /// </summary>
-  public readonly string[] EXPECTED = [
+  public readonly string[] Expected = [
     "if you want more viewers for your stream, go to"
   ];
 
@@ -33,7 +33,7 @@ public class IfYouWantViewers : AChatRule {
     string normalized = string.Join(' ', message.Message.Split(" ").Where(s => !string.IsNullOrWhiteSpace(s)))
       .ToLowerInvariant();
 
-    foreach (string expected in EXPECTED) {
+    foreach (string expected in Expected) {
       if (normalized.Contains(expected, StringComparison.InvariantCultureIgnoreCase)) {
         await BanAndLog(channelId, botProxy, new[] { (message.UserId, message.Username) },
           "[Bot] Spam (If You Want Viewers)", db, stoppingToken);

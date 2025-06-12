@@ -13,7 +13,7 @@ public class BestCheapViewers : AChatRule {
   /// <summary>
   ///   The strings that we expect to receive if this is a bot.
   /// </summary>
-  public readonly string[] EXPECTED = [
+  public readonly string[] Expected = [
     "best viewers on",
     "cheap viewers on",
     "cheap folloewrs on",
@@ -39,7 +39,7 @@ public class BestCheapViewers : AChatRule {
     // Messages will be one of two variations with random special characters mixed in. Some of those special characters
     // will be accent marks. When we receive an accent mark it'll take the position of a real character, hence why we
     // need an offset applied only to the incoming string.
-    foreach (string expected in EXPECTED) {
+    foreach (string expected in Expected) {
       if (normalized.Length > expected.Length) {
         int matches = 0;
         int offset = 0;

@@ -24,7 +24,7 @@ public static class NullinsideContextExtensions {
   /// <summary>
   ///   The logger.
   /// </summary>
-  private static readonly ILog _log = LogManager.GetLogger(typeof(NullinsideContextExtensions));
+  private static readonly ILog LOG = LogManager.GetLogger(typeof(NullinsideContextExtensions));
 
   /// <summary>
   ///   Gets a twitch api proxy.
@@ -70,7 +70,7 @@ public static class NullinsideContextExtensions {
       var sw = new Stopwatch();
       sw.Start();
       await dbLock.GetLock(BOT_REFRESH_TOKEN_LOCK_NAME, stoppingToken);
-      _log.Info($"bot_refresh_token: {sw.Elapsed}");
+      LOG.Info($"bot_refresh_token: {sw.Elapsed}");
       sw.Stop();
 
       try {
@@ -143,7 +143,7 @@ public static class NullinsideContextExtensions {
     ITwitchApiProxy api, CancellationToken stoppingToken = new()) {
     // Get the bot user's information.
     User? botUser = await db.Users.AsNoTracking()
-      .FirstOrDefaultAsync(u => u.TwitchId == Constants.BotId, stoppingToken);
+      .FirstOrDefaultAsync(u => u.TwitchId == Constants.BOT_ID, stoppingToken);
     if (null == botUser) {
       throw new Exception("No bot user in database");
     }

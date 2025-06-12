@@ -10,7 +10,7 @@ namespace Nullinside.Api.TwitchBot.ChatRules;
 ///   Handles the add me on discord bots.
 /// </summary>
 public class Discord : AChatRule {
-  private readonly string[] KNOWN_PHRASES = [
+  private readonly string[] _knownPhrases = [
     "add me",
     "add my",
     "add up",
@@ -45,7 +45,7 @@ public class Discord : AChatRule {
       return true;
     }
 
-    foreach (string phrase in KNOWN_PHRASES) {
+    foreach (string phrase in _knownPhrases) {
       if (normalized.Contains(phrase, StringComparison.InvariantCultureIgnoreCase)) {
         await BanAndLog(channelId, botProxy, new[] { (message.UserId, message.Username) },
           "[Bot] Spam (Discord Scammers)", db, stoppingToken);

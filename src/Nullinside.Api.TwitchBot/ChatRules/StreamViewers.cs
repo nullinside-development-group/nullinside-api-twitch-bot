@@ -10,9 +10,9 @@ namespace Nullinside.Api.TwitchBot.ChatRules;
 ///   Handles "streamviewers org" spam.
 /// </summary>
 public class StreamViewers : AChatRule {
-  private const int MinThreshold = 70;
+  private const int MIN_THRESHOLD = 70;
 
-  private const string ExpectedSpamMessage =
+  private const string EXPECTED_SPAM_MESSAGE =
     "doyoualreadytriedstreamviewersorg?realviewers,fireworks!theyarenowgivingoutafreepackageforstreamersoo";
 
   /// <inheritdoc />
@@ -47,13 +47,13 @@ public class StreamViewers : AChatRule {
 
     // With no spaces the message will be exactly the length of our spam message.
     string noSpaces = string.Concat(parts);
-    if (noSpaces.Length != ExpectedSpamMessage.Length) {
+    if (noSpaces.Length != EXPECTED_SPAM_MESSAGE.Length) {
       return true;
     }
 
     // Determine how similar the message is to the spam message.
     int matches = 0;
-    for (int i = 0; i < ExpectedSpamMessage.Length; i++) {
+    for (int i = 0; i < EXPECTED_SPAM_MESSAGE.Length; i++) {
       // If it's not an ascii character it might mean they're trying to obfuscate by swapping out letters that look
       // like ascii characters. Like an e with an accent mark instead of an ascii e. They'll look almost the same to
       // the reader but the character will be different. We can skip these and assume it doesn't count as a match.
@@ -65,7 +65,7 @@ public class StreamViewers : AChatRule {
       // strings must match. There shouldn't be any letters in order that we aren't expecting provided they're actually
       // ascii characters. If, for some reason, there is a letter in this position that we aren't expecting it means it
       // is not our spam message.
-      if (noSpaces[i] != ExpectedSpamMessage[i]) {
+      if (noSpaces[i] != EXPECTED_SPAM_MESSAGE[i]) {
         return true;
       }
 
@@ -74,7 +74,7 @@ public class StreamViewers : AChatRule {
     }
 
     // If we had less character matches than our threshold then this wasn't a spam message.
-    if (matches < MinThreshold) {
+    if (matches < MIN_THRESHOLD) {
       return true;
     }
 
