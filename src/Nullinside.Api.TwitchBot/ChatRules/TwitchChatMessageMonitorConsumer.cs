@@ -4,8 +4,6 @@ using log4net;
 
 using Microsoft.EntityFrameworkCore;
 
-using Mysqlx.Expr;
-
 using Nullinside.Api.Common.Twitch;
 using Nullinside.Api.Model;
 using Nullinside.Api.Model.Ddl;
@@ -36,6 +34,11 @@ public class TwitchChatMessageMonitorConsumer : IDisposable {
   private static IChatRule[]? s_chatRules;
 
   /// <summary>
+  ///   The twitch api.
+  /// </summary>
+  private readonly ITwitchApiProxy _api;
+
+  /// <summary>
   ///   The nullinside database.
   /// </summary>
   private readonly INullinsideContext _db;
@@ -54,11 +57,6 @@ public class TwitchChatMessageMonitorConsumer : IDisposable {
   ///   The poison pill to kill the <see cref="_thread" />.
   /// </summary>
   private bool _poisonPill;
-
-  /// <summary>
-  /// The twitch api.
-  /// </summary>
-  private readonly ITwitchApiProxy _api;
 
   /// <summary>
   ///   Initializes a new instance of the <see cref="TwitchChatMessageMonitorConsumer" /> class.
@@ -147,7 +145,7 @@ public class TwitchChatMessageMonitorConsumer : IDisposable {
           }
 
           // Get the bot proxy
-          ITwitchApiProxy? botProxy = await _db.ConfigureBotApiAndRefreshToken(this._api);
+          ITwitchApiProxy? botProxy = await _db.ConfigureBotApiAndRefreshToken(_api);
           if (null == botProxy) {
             continue;
           }

@@ -60,23 +60,23 @@ public class LoginController : ControllerBase {
   public async Task<IActionResult> TwitchLogin([FromQuery] string code, [FromServices] ITwitchApiProxy api, CancellationToken token) {
     string? siteUrl = _configuration.GetValue<string>("Api:SiteUrl");
     if (null == await api.CreateAccessToken(code, token)) {
-      return Redirect($"{siteUrl}/twitch-bot/config?error={TwitchBotLoginErrors.TwitchErrorWithToken}");
+      return Redirect($"{siteUrl}/twitch-bot/config?error={TwitchBotLoginErrors.TWITCH_ERROR_WITH_TOKEN}");
     }
 
     string? email = await api.GetUserEmail(token);
     if (string.IsNullOrWhiteSpace(email)) {
-      return Redirect($"{siteUrl}/twitch-bot/config?error={TwitchBotLoginErrors.TwitchAccountHasNoEmail}");
+      return Redirect($"{siteUrl}/twitch-bot/config?error={TwitchBotLoginErrors.TWITCH_ACCOUNT_HAS_NO_EMAIL}");
     }
 
     (string? id, string? username) user = await api.GetUser(token);
     if (string.IsNullOrWhiteSpace(user.username) || string.IsNullOrWhiteSpace(user.id)) {
-      return Redirect($"{siteUrl}/twitch-bot/config?error={TwitchBotLoginErrors.InternalError}");
+      return Redirect($"{siteUrl}/twitch-bot/config?error={TwitchBotLoginErrors.INTERNAL_ERROR}");
     }
 
     string? bearerToken = await UserHelpers.GenerateTokenAndSaveToDatabase(_dbContext, email, token, api.OAuth?.AccessToken,
       api.OAuth?.RefreshToken, api.OAuth?.ExpiresUtc, user.username, user.id);
     if (string.IsNullOrWhiteSpace(bearerToken)) {
-      return Redirect($"{siteUrl}/twitch-bot/config?error={TwitchBotLoginErrors.InternalError}");
+      return Redirect($"{siteUrl}/twitch-bot/config?error={TwitchBotLoginErrors.INTERNAL_ERROR}");
     }
 
     return Redirect($"{siteUrl}/twitch-bot/config?token={bearerToken}");

@@ -47,7 +47,7 @@ builder.Services.AddAuthorization(options => {
   }
 
   options.FallbackPolicy = new AuthorizationPolicyBuilder()
-    .RequireRole(nameof(UserRoles.User))
+    .RequireRole(nameof(UserRoles.USER))
     .RequireAuthenticatedUser()
     .Build();
 });

@@ -2,8 +2,6 @@
 using Nullinside.Api.Model;
 using Nullinside.Api.TwitchBot.Model;
 
-using TwitchLib.Client.Models;
-
 using TwitchUserConfig = Nullinside.Api.Model.Ddl.TwitchUserConfig;
 
 namespace Nullinside.Api.TwitchBot.ChatRules;

@@ -2,8 +2,6 @@
 using Nullinside.Api.Model;
 using Nullinside.Api.TwitchBot.Model;
 
-using TwitchLib.Client.Models;
-
 using TwitchUserConfig = Nullinside.Api.Model.Ddl.TwitchUserConfig;
 
 namespace Nullinside.Api.TwitchBot.ChatRules;
@@ -28,7 +26,7 @@ public class StreamViewers : AChatRule {
     if (!message.IsFirstMessage) {
       return true;
     }
-    
+
     List<string> parts = message.Message
       .Split(" ")
       .Where(s => !string.IsNullOrWhiteSpace(s))
