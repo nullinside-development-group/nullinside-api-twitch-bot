@@ -2,8 +2,6 @@
 using Nullinside.Api.Model;
 using Nullinside.Api.TwitchBot.Model;
 
-using TwitchLib.Client.Models;
-
 using TwitchUserConfig = Nullinside.Api.Model.Ddl.TwitchUserConfig;
 
 namespace Nullinside.Api.TwitchBot.ChatRules;
@@ -31,7 +29,7 @@ public abstract class AChatRule : IChatRule {
   public async Task BanAndLog(string channelId, ITwitchApiProxy botProxy,
     IEnumerable<(string Id, string Username)> users, string reason, INullinsideContext db,
     CancellationToken stoppingToken = new()) {
-    await botProxy.BanChannelUsers(channelId, Constants.BotId, users, reason, stoppingToken);
+    await botProxy.BanChannelUsers(channelId, Constants.BOT_ID, users, reason, stoppingToken);
     await db.SaveTwitchBans(channelId, users, reason, stoppingToken);
   }
 }

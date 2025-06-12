@@ -2,8 +2,6 @@
 using Nullinside.Api.Model;
 using Nullinside.Api.TwitchBot.Model;
 
-using TwitchLib.Client.Models;
-
 using TwitchUserConfig = Nullinside.Api.Model.Ddl.TwitchUserConfig;
 
 namespace Nullinside.Api.TwitchBot.ChatRules;
@@ -12,7 +10,7 @@ namespace Nullinside.Api.TwitchBot.ChatRules;
 ///   Handles "streamrise" spam.
 /// </summary>
 public class StreamRise : AChatRule {
-  private const string _spam = "Hello, sorry for bothering you. I want to offer promotion of your channel, " +
+  private const string SPAM = "Hello, sorry for bothering you. I want to offer promotion of your channel, " +
                                "viewers, followers, views, chat bots, etc...The price is lower than any competitor, " +
                                "the quality is guaranteed to be the best.   Flexible and convenient order management " +
                                "panel, chat panel, everything is in your hands, a huge number of custom settings. Go " +
@@ -26,7 +24,7 @@ public class StreamRise : AChatRule {
   /// <inheritdoc />
   public override async Task<bool> Handle(string channelId, ITwitchApiProxy botProxy, TwitchChatMessage message,
     INullinsideContext db, CancellationToken stoppingToken = new()) {
-    if (message.IsFirstMessage && _spam.Equals(message.Message, StringComparison.InvariantCultureIgnoreCase)) {
+    if (message.IsFirstMessage && SPAM.Equals(message.Message, StringComparison.InvariantCultureIgnoreCase)) {
       await BanAndLog(channelId, botProxy, new[] { (message.UserId, message.Username) },
         "[Bot] Spam (StreamRise)", db, stoppingToken);
       return false;

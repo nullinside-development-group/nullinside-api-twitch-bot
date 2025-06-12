@@ -11,7 +11,7 @@ using Nullinside.Api.Common.Twitch;
 using Nullinside.Api.Model;
 using Nullinside.Api.TwitchBot.Services;
 
-const string CORS_KEY = "_customAllowedSpecificOrigins";
+const string corsKey = "_customAllowedSpecificOrigins";
 
 WebApplicationBuilder builder = WebApplication.CreateBuilder(args);
 builder.Logging.ClearProviders();
@@ -47,7 +47,7 @@ builder.Services.AddAuthorization(options => {
   }
 
   options.FallbackPolicy = new AuthorizationPolicyBuilder()
-    .RequireRole(nameof(UserRoles.User))
+    .RequireRole(nameof(UserRoles.USER))
     .RequireAuthenticatedUser()
     .Build();
 });
@@ -88,7 +88,7 @@ builder.Services.AddSwaggerGen(c => {
 
 // Add services to the container.
 builder.Services.AddCors(options => {
-  options.AddPolicy(CORS_KEY,
+  options.AddPolicy(corsKey,
     policyBuilder => {
       policyBuilder.WithOrigins("https://www.nullinside.com", "https://nullinside.com", "http://localhost:4200",
           "http://127.0.0.1:4200")
@@ -114,7 +114,7 @@ if (app.Environment.IsDevelopment()) {
 }
 
 app.UseHttpsRedirection();
-app.UseCors(CORS_KEY);
+app.UseCors(corsKey);
 app.UseAuthorization();
 
 app.MapControllers();

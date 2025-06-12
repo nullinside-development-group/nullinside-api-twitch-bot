@@ -25,7 +25,6 @@ end_of_line = lf
 insert_final_newline = false
 
 #### .NET Coding Conventions ####
-[*.{cs,vb}]
 
 # Organize usings
 dotnet_separate_import_directive_groups = true
@@ -78,7 +77,6 @@ dotnet_code_quality_unused_parameters = all:suggestion
 dotnet_remove_unnecessary_suppression_exclusions = none
 
 #### C# Coding Conventions ####
-[*.cs]
 
 # var preferences
 csharp_style_var_elsewhere = false:silent
@@ -175,7 +173,6 @@ csharp_preserve_single_line_blocks = true
 csharp_preserve_single_line_statements = true
 
 #### Naming styles ####
-[*.{cs,vb}]
 
 # Naming rules
 
@@ -229,19 +226,19 @@ dotnet_naming_rule.private_static_fields_should_be_s_camelcase.style = s_camelca
 
 dotnet_naming_rule.public_constant_fields_should_be_pascalcase.severity = suggestion
 dotnet_naming_rule.public_constant_fields_should_be_pascalcase.symbols = public_constant_fields
-dotnet_naming_rule.public_constant_fields_should_be_pascalcase.style = pascalcase
+dotnet_naming_rule.public_constant_fields_should_be_pascalcase.style = all_upper
 
 dotnet_naming_rule.private_constant_fields_should_be_pascalcase.severity = suggestion
 dotnet_naming_rule.private_constant_fields_should_be_pascalcase.symbols = private_constant_fields
-dotnet_naming_rule.private_constant_fields_should_be_pascalcase.style = pascalcase
+dotnet_naming_rule.private_constant_fields_should_be_pascalcase.style = all_upper
 
 dotnet_naming_rule.public_static_readonly_fields_should_be_pascalcase.severity = suggestion
 dotnet_naming_rule.public_static_readonly_fields_should_be_pascalcase.symbols = public_static_readonly_fields
-dotnet_naming_rule.public_static_readonly_fields_should_be_pascalcase.style = pascalcase
+dotnet_naming_rule.public_static_readonly_fields_should_be_pascalcase.style = all_upper
 
 dotnet_naming_rule.private_static_readonly_fields_should_be_pascalcase.severity = suggestion
 dotnet_naming_rule.private_static_readonly_fields_should_be_pascalcase.symbols = private_static_readonly_fields
-dotnet_naming_rule.private_static_readonly_fields_should_be_pascalcase.style = pascalcase
+dotnet_naming_rule.private_static_readonly_fields_should_be_pascalcase.style = all_upper
 
 dotnet_naming_rule.enums_should_be_pascalcase.severity = suggestion
 dotnet_naming_rule.enums_should_be_pascalcase.symbols = enums
@@ -365,3 +362,7 @@ dotnet_naming_style.s_camelcase.required_suffix =
 dotnet_naming_style.s_camelcase.word_separator =
 dotnet_naming_style.s_camelcase.capitalization = camel_case
 
+dotnet_naming_style.all_upper.required_prefix =
+dotnet_naming_style.all_upper.required_suffix =
+dotnet_naming_style.all_upper.word_separator = _
+dotnet_naming_style.all_upper.capitalization = all_upper

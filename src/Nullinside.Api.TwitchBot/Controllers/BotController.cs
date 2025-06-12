@@ -67,12 +67,12 @@ public class BotController : ControllerBase {
         null == user.TwitchTokenExpiration || null == user.TwitchId) {
       return Unauthorized();
     }
-    
+
     api.Configure(user);
     IEnumerable<Moderator> mods = await api.GetChannelMods(user.TwitchId, token);
     return Ok(new {
       isMod = null != mods.FirstOrDefault(m =>
-        string.Equals(m.UserId, Constants.BotId, StringComparison.InvariantCultureIgnoreCase))
+        string.Equals(m.UserId, Constants.BOT_ID, StringComparison.InvariantCultureIgnoreCase))
     });
   }
 
@@ -95,9 +95,9 @@ public class BotController : ControllerBase {
         null == user.TwitchTokenExpiration || null == user.TwitchId) {
       return Unauthorized();
     }
-    
+
     api.Configure(user);
-    bool success = await api.AddChannelMod(user.TwitchId, Constants.BotId, token);
+    bool success = await api.AddChannelMod(user.TwitchId, Constants.BOT_ID, token);
     return Ok(success);
   }
 
@@ -133,7 +133,7 @@ public class BotController : ControllerBase {
       BanKnownBots = config.BanKnownBots
     });
   }
-  
+
   /// <summary>
   ///   Gets the timestamp of the last time a chat message was received.
   /// </summary>
@@ -143,7 +143,7 @@ public class BotController : ControllerBase {
   [HttpGet]
   [Route("chat/timestamp")]
   public async Task<IActionResult> GetLastChatTimestamp(CancellationToken token) {
-    var message =
+    TwitchUserChatLogs? message =
       await _dbContext.TwitchUserChatLogs.OrderByDescending(c => c.Timestamp).FirstOrDefaultAsync(token);
     if (null == message) {
       return StatusCode(500);

@@ -2,8 +2,6 @@
 using Nullinside.Api.Model;
 using Nullinside.Api.TwitchBot.Model;
 
-using TwitchLib.Client.Models;
-
 using TwitchUserConfig = Nullinside.Api.Model.Ddl.TwitchUserConfig;
 
 namespace Nullinside.Api.TwitchBot.ChatRules;
@@ -12,7 +10,7 @@ namespace Nullinside.Api.TwitchBot.ChatRules;
 ///   Handles the add me on discord bots.
 /// </summary>
 public class Discord : AChatRule {
-  private readonly string[] KNOWN_PHRASES = [
+  private readonly string[] _knownPhrases = [
     "add me",
     "add my",
     "add up",
@@ -38,7 +36,7 @@ public class Discord : AChatRule {
     if (!message.IsFirstMessage) {
       return true;
     }
-    
+
     // The number of spaces per message may chance, so normalize that and lowercase it for comparison.
     string normalized = string.Join(' ', message.Message.Split(" ").Where(s => !string.IsNullOrWhiteSpace(s)))
       .ToLowerInvariant();
@@ -47,7 +45,7 @@ public class Discord : AChatRule {
       return true;
     }
 
-    foreach (var phrase in KNOWN_PHRASES) {
+    foreach (string phrase in _knownPhrases) {
       if (normalized.Contains(phrase, StringComparison.InvariantCultureIgnoreCase)) {
         await BanAndLog(channelId, botProxy, new[] { (message.UserId, message.Username) },
           "[Bot] Spam (Discord Scammers)", db, stoppingToken);
