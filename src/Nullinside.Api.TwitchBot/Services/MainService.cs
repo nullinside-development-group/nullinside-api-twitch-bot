@@ -99,7 +99,16 @@ public class MainService : BackgroundService {
     _db = _scope.ServiceProvider.GetRequiredService<INullinsideContext>();
     _api = _scope.ServiceProvider.GetRequiredService<ITwitchApiProxy>();
     _client = _scope.ServiceProvider.GetRequiredService<ITwitchClientProxy>();
+    _client.AddDisconnectedCallback(OnTwitchClientDisconected);
     _chatMessageConsumer = new TwitchChatMessageMonitorConsumer(_db, _api, _receivedMessageProcessingQueue);
+  }
+
+  /// <summary>
+  ///   Called when the twitch client is disconnected.
+  /// </summary>
+  private void OnTwitchClientDisconected() {
+    _log.Info("Twitch Client Disconnected, exiting app");
+    Environment.Exit(0);
   }
 
   /// <summary>

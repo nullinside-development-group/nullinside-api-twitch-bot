@@ -11,10 +11,10 @@ namespace Nullinside.Api.TwitchBot.ChatRules;
 /// </summary>
 public class StreamRise : AChatRule {
   private const string SPAM = "Hello, sorry for bothering you. I want to offer promotion of your channel, " +
-                               "viewers, followers, views, chat bots, etc...The price is lower than any competitor, " +
-                               "the quality is guaranteed to be the best.   Flexible and convenient order management " +
-                               "panel, chat panel, everything is in your hands, a huge number of custom settings. Go " +
-                               "to streamrise";
+                              "viewers, followers, views, chat bots, etc...The price is lower than any competitor, " +
+                              "the quality is guaranteed to be the best.   Flexible and convenient order management " +
+                              "panel, chat panel, everything is in your hands, a huge number of custom settings. Go " +
+                              "to streamrise";
 
   /// <inheritdoc />
   public override bool ShouldRun(TwitchUserConfig config) {
