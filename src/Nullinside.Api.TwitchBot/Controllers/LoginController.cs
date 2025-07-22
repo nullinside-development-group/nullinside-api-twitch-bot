@@ -8,6 +8,8 @@ using Nullinside.Api.Common.Twitch.Support;
 using Nullinside.Api.Model;
 using Nullinside.Api.Model.Shared;
 
+using TwitchLib.Api.Helix.Models.Users.GetUsers;
+
 namespace Nullinside.Api.TwitchBot.Controllers;
 
 /// <summary>
@@ -68,13 +70,13 @@ public class LoginController : ControllerBase {
       return Redirect($"{siteUrl}/twitch-bot/config?error={TwitchBotLoginErrors.TWITCH_ACCOUNT_HAS_NO_EMAIL}");
     }
 
-    (string? id, string? username) user = await api.GetUser(token);
-    if (string.IsNullOrWhiteSpace(user.username) || string.IsNullOrWhiteSpace(user.id)) {
+    User? user = await api.GetUser(token);
+    if (string.IsNullOrWhiteSpace(user?.Login) || string.IsNullOrWhiteSpace(user.Id)) {
       return Redirect($"{siteUrl}/twitch-bot/config?error={TwitchBotLoginErrors.INTERNAL_ERROR}");
     }
 
     string? bearerToken = await UserHelpers.GenerateTokenAndSaveToDatabase(_dbContext, email, token, api.OAuth?.AccessToken,
-      api.OAuth?.RefreshToken, api.OAuth?.ExpiresUtc, user.username, user.id);
+      api.OAuth?.RefreshToken, api.OAuth?.ExpiresUtc, user.Login, user.Id);
     if (string.IsNullOrWhiteSpace(bearerToken)) {
       return Redirect($"{siteUrl}/twitch-bot/config?error={TwitchBotLoginErrors.INTERNAL_ERROR}");
     }
