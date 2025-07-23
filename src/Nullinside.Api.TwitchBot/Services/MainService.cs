@@ -119,8 +119,8 @@ public class MainService : BackgroundService {
     return Task.Run(async () => {
       while (!stoppingToken.IsCancellationRequested) {
         try {
-          ITwitchApiProxy? botApi = await _db.ConfigureBotApiAndRefreshToken(_api, stoppingToken);
-          if (null == botApi || !await botApi.GetAccessTokenIsValid(stoppingToken)) {
+          ITwitchApiProxy? botApi = await _db.ConfigureBotApiAndRefreshToken(_api, stoppingToken).ConfigureAwait(false);
+          if (null == botApi || !await botApi.GetAccessTokenIsValid(stoppingToken).ConfigureAwait(false)) {
             throw new Exception("Unable to log in as bot user");
           }
 
@@ -134,11 +134,11 @@ public class MainService : BackgroundService {
             .Where(o => null != o)
             .ToArray()!;
 
-          await Main(stoppingToken);
+          await Main(stoppingToken).ConfigureAwait(false);
         }
         catch (Exception ex) {
           _log.Error("Main Failed", ex);
-          await Task.Delay(TimeSpan.FromSeconds(10), stoppingToken);
+          await Task.Delay(TimeSpan.FromSeconds(10), stoppingToken).ConfigureAwait(false);
         }
       }
     }, stoppingToken);
@@ -152,24 +152,25 @@ public class MainService : BackgroundService {
     try {
       while (!stoppingToken.IsCancellationRequested) {
         using (IServiceScope scope = _serviceScopeFactory.CreateAsyncScope()) {
-          await using (var db = scope.ServiceProvider.GetRequiredService<INullinsideContext>()) {
+          var db = scope.ServiceProvider.GetRequiredService<INullinsideContext>();
+          await using (db.ConfigureAwait(false)) {
             // Send logs to database
             DumpLogsToDatabase(db);
 
             // Get the list of users with the bot enabled.
-            List<User>? usersWithBotEnabled = await GetUsersWithBotEnabled(db, stoppingToken);
+            List<User>? usersWithBotEnabled = await GetUsersWithBotEnabled(db, stoppingToken).ConfigureAwait(false);
             if (null == usersWithBotEnabled) {
               continue;
             }
 
             // Get the bot user's information.
             User? botUser = await db.Users.AsNoTracking()
-              .FirstOrDefaultAsync(u => u.TwitchId == Constants.BOT_ID, stoppingToken);
+              .FirstOrDefaultAsync(u => u.TwitchId == Constants.BOT_ID, stoppingToken).ConfigureAwait(false);
             if (null == botUser) {
               throw new Exception("No bot user in database");
             }
 
-            ITwitchApiProxy? botApi = await db.ConfigureApiAndRefreshToken(botUser, _api, stoppingToken);
+            ITwitchApiProxy? botApi = await db.ConfigureApiAndRefreshToken(botUser, _api, stoppingToken).ConfigureAwait(false);
             if (null != botApi) {
               // Ensure the twitch client has the most up-to-date password
               _client.TwitchOAuthToken = botApi.OAuth?.AccessToken;
@@ -177,11 +178,11 @@ public class MainService : BackgroundService {
               // Trim channels that aren't live
               IEnumerable<string> liveUsers = await botApi.GetChannelsLive(usersWithBotEnabled
                 .Where(u => null != u.TwitchId)
-                .Select(u => u.TwitchId)!);
+                .Select(u => u.TwitchId)!).ConfigureAwait(false);
               usersWithBotEnabled = usersWithBotEnabled.Where(u => liveUsers.Contains(u.TwitchId)).ToList();
 
               // Trim channels we aren't a mod in
-              IEnumerable<TwitchModeratedChannel> moddedChannels = await botApi.GetUserModChannels(Constants.BOT_ID);
+              IEnumerable<TwitchModeratedChannel> moddedChannels = await botApi.GetUserModChannels(Constants.BOT_ID).ConfigureAwait(false);
               usersWithBotEnabled = usersWithBotEnabled
                 .Where(u => moddedChannels.Select(m => m.broadcaster_id).Contains(u.TwitchId))
                 .ToList();
@@ -194,15 +195,15 @@ public class MainService : BackgroundService {
                   continue;
                 }
 
-                await _client.AddMessageCallback(channel.TwitchUsername, OnTwitchMessageReceived);
-                await _client.AddBannedCallback(channel.TwitchUsername, OnTwitchBanReceived);
+                await _client.AddMessageCallback(channel.TwitchUsername, OnTwitchMessageReceived).ConfigureAwait(false);
+                await _client.AddBannedCallback(channel.TwitchUsername, OnTwitchBanReceived).ConfigureAwait(false);
               }
             }
 
             // Spawn 5 workers to process all the live user's channels.
             Parallel.ForEach(usersWithBotEnabled, new ParallelOptions { MaxDegreeOfParallelism = 5 }, async user => {
               try {
-                await DoScan(user, botUser, stoppingToken);
+                await DoScan(user, botUser, stoppingToken).ConfigureAwait(false);
               }
               catch (Exception ex) {
                 _log.Error($"Scan failed for {user.TwitchUsername}", ex);
@@ -212,7 +213,7 @@ public class MainService : BackgroundService {
         }
 
         // Wait between scans. We don't want to spam the API too much.
-        await Task.Delay(SCAN_LOOP_DELAY_MILLISECONDS, stoppingToken);
+        await Task.Delay(SCAN_LOOP_DELAY_MILLISECONDS, stoppingToken).ConfigureAwait(false);
       }
     }
     catch (Exception ex) {
@@ -290,7 +291,7 @@ public class MainService : BackgroundService {
       .Include(u => u.TwitchConfig)
       .Where(u => null != u.TwitchConfig && u.TwitchConfig.Enabled)
       .AsNoTracking()
-      .ToListAsync(stoppingToken);
+      .ToListAsync(stoppingToken).ConfigureAwait(false);
   }
 
   /// <summary>
@@ -307,7 +308,7 @@ public class MainService : BackgroundService {
               user.IsBanned
         select user)
       .AsNoTracking()
-      .ToListAsync(stoppingToken);
+      .ToListAsync(stoppingToken).ConfigureAwait(false);
   }
 
   /// <summary>
@@ -325,7 +326,8 @@ public class MainService : BackgroundService {
     // Since each scan will happen on a separate thread, we need an individual scope and database reference
     // per invocation, allowing them to release each loop.
     using (IServiceScope scope = _serviceScopeFactory.CreateAsyncScope()) {
-      await using (var db = scope.ServiceProvider.GetRequiredService<INullinsideContext>()) {
+      var db = scope.ServiceProvider.GetRequiredService<INullinsideContext>();
+      await using (db.ConfigureAwait(false)) {
         // Get the API
         _api.Configure(botUser);
         if (null == s_botRules || null == user.TwitchConfig) {
@@ -336,7 +338,7 @@ public class MainService : BackgroundService {
         foreach (IBotRule rule in s_botRules) {
           try {
             if (rule.ShouldRun(user.TwitchConfig)) {
-              await rule.Handle(user, user.TwitchConfig, _api, db, stoppingToken);
+              await rule.Handle(user, user.TwitchConfig, _api, db, stoppingToken).ConfigureAwait(false);
             }
           }
           catch (Exception e) {
@@ -345,13 +347,13 @@ public class MainService : BackgroundService {
         }
 
         // Log that we performed a scan to completion.
-        User? dbUser = await db.Users.FirstOrDefaultAsync(u => u.Id == user.Id, stoppingToken);
+        User? dbUser = await db.Users.FirstOrDefaultAsync(u => u.Id == user.Id, stoppingToken).ConfigureAwait(false);
         if (null == dbUser) {
           return;
         }
 
         dbUser.TwitchLastScanned = DateTime.UtcNow;
-        await db.SaveChangesAsync(stoppingToken);
+        await db.SaveChangesAsync(stoppingToken).ConfigureAwait(false);
       }
     }
   }

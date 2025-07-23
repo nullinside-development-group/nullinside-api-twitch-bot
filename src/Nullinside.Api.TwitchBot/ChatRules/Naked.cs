@@ -25,7 +25,7 @@ public class Naked : AChatRule {
         (message.Message.TrimStart().StartsWith(SPAM, StringComparison.InvariantCultureIgnoreCase) ||
          message.Message.TrimStart().StartsWith(SPAM2, StringComparison.InvariantCultureIgnoreCase))) {
       await BanAndLog(channelId, botProxy, new[] { (message.UserId, message.Username) },
-        "[Bot] Spam (Naked)", db, stoppingToken);
+        "[Bot] Spam (Naked)", db, stoppingToken).ConfigureAwait(false);
       return false;
     }
 

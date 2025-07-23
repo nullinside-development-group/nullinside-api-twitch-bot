@@ -84,7 +84,7 @@ public class StreamViewers : AChatRule {
     // 3. In places where the characters didn't match, they only didn't match because the message used a non-english keyboard character. It was never because a different letter was in the position.
     // 4. It was probably an @ mention to another user where the @ was the first thing in the message.
     await BanAndLog(channelId, botProxy, new[] { (message.UserId, message.Username) },
-      "[Bot] Spam (StreamViewers)", db, stoppingToken);
+      "[Bot] Spam (StreamViewers)", db, stoppingToken).ConfigureAwait(false);
     return false;
   }
 }

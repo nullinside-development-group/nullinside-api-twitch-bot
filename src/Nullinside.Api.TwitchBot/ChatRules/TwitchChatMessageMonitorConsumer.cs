@@ -145,7 +145,7 @@ public class TwitchChatMessageMonitorConsumer : IDisposable {
           }
 
           // Get the bot proxy
-          ITwitchApiProxy? botProxy = await _db.ConfigureBotApiAndRefreshToken(_api);
+          ITwitchApiProxy? botProxy = await _db.ConfigureBotApiAndRefreshToken(_api).ConfigureAwait(false);
           if (null == botProxy) {
             continue;
           }
@@ -154,7 +154,7 @@ public class TwitchChatMessageMonitorConsumer : IDisposable {
           foreach (IChatRule rule in rules) {
             try {
               if (rule.ShouldRun(user.TwitchConfig)) {
-                if (!await rule.Handle(user.TwitchId, botProxy, new TwitchChatMessage(message), _db)) {
+                if (!await rule.Handle(user.TwitchId, botProxy, new TwitchChatMessage(message), _db).ConfigureAwait(false)) {
                   break;
                 }
               }

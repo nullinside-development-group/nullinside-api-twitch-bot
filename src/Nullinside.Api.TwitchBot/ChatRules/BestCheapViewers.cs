@@ -59,8 +59,8 @@ public class BestCheapViewers : AChatRule {
         // If everything matches except 3 characters, take it. We will assume the 3 characters are "special" characters
         // used to confuse us.
         if (matches > expected.Length - 3) {
-          await BanAndLog(channelId, botProxy, new[] { (message.UserId, message.Username) },
-            "[Bot] Spam (Best Cheap Viewers)", db, stoppingToken);
+          (string UserId, string Username)[] users = new[] { (message.UserId, message.Username) };
+          await BanAndLog(channelId, botProxy, users, "[Bot] Spam (Best Cheap Viewers)", db, stoppingToken).ConfigureAwait(false);
           return false;
         }
       }

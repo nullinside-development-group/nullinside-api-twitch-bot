@@ -26,7 +26,7 @@ public class StreamRise : AChatRule {
     INullinsideContext db, CancellationToken stoppingToken = new()) {
     if (message.IsFirstMessage && SPAM.Equals(message.Message, StringComparison.InvariantCultureIgnoreCase)) {
       await BanAndLog(channelId, botProxy, new[] { (message.UserId, message.Username) },
-        "[Bot] Spam (StreamRise)", db, stoppingToken);
+        "[Bot] Spam (StreamRise)", db, stoppingToken).ConfigureAwait(false);
       return false;
     }
 

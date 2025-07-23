@@ -48,7 +48,7 @@ public class Discord : AChatRule {
     foreach (string phrase in _knownPhrases) {
       if (normalized.Contains(phrase, StringComparison.InvariantCultureIgnoreCase)) {
         await BanAndLog(channelId, botProxy, new[] { (message.UserId, message.Username) },
-          "[Bot] Spam (Discord Scammers)", db, stoppingToken);
+          "[Bot] Spam (Discord Scammers)", db, stoppingToken).ConfigureAwait(false);
         return false;
       }
     }

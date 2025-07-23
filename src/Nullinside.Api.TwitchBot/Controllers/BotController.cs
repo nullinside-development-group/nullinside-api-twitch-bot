@@ -69,7 +69,7 @@ public class BotController : ControllerBase {
     }
 
     api.Configure(user);
-    IEnumerable<Moderator> mods = await api.GetChannelMods(user.TwitchId, token);
+    IEnumerable<Moderator> mods = await api.GetChannelMods(user.TwitchId, token).ConfigureAwait(false);
     return Ok(new {
       isMod = null != mods.FirstOrDefault(m =>
         string.Equals(m.UserId, Constants.BOT_ID, StringComparison.InvariantCultureIgnoreCase))
@@ -97,7 +97,7 @@ public class BotController : ControllerBase {
     }
 
     api.Configure(user);
-    bool success = await api.AddChannelMod(user.TwitchId, Constants.BOT_ID, token);
+    bool success = await api.AddChannelMod(user.TwitchId, Constants.BOT_ID, token).ConfigureAwait(false);
     return Ok(success);
   }
 
@@ -114,13 +114,13 @@ public class BotController : ControllerBase {
       return Unauthorized();
     }
 
-    User? user = await _dbContext.Users.FirstOrDefaultAsync(u => u.Id == int.Parse(userId.Value) && !u.IsBanned, token);
+    User? user = await _dbContext.Users.FirstOrDefaultAsync(u => u.Id == int.Parse(userId.Value) && !u.IsBanned, token).ConfigureAwait(false);
     if (null == user) {
       return Unauthorized();
     }
 
     Api.Model.Ddl.TwitchUserConfig? config =
-      await _dbContext.TwitchUserConfig.FirstOrDefaultAsync(c => c.UserId == user.Id, token);
+      await _dbContext.TwitchUserConfig.FirstOrDefaultAsync(c => c.UserId == user.Id, token).ConfigureAwait(false);
     if (null == config) {
       return Ok(new TwitchUserConfig {
         IsEnabled = true,
@@ -144,7 +144,7 @@ public class BotController : ControllerBase {
   [Route("chat/timestamp")]
   public async Task<IActionResult> GetLastChatTimestamp(CancellationToken token) {
     TwitchUserChatLogs? message =
-      await _dbContext.TwitchUserChatLogs.OrderByDescending(c => c.Timestamp).FirstOrDefaultAsync(token);
+      await _dbContext.TwitchUserChatLogs.OrderByDescending(c => c.Timestamp).FirstOrDefaultAsync(token).ConfigureAwait(false);
     if (null == message) {
       return StatusCode(500);
     }
@@ -168,14 +168,14 @@ public class BotController : ControllerBase {
 
     int userId = int.Parse(userIdClaim.Value);
     Api.Model.Ddl.TwitchUserConfig? configDb =
-      await _dbContext.TwitchUserConfig.FirstOrDefaultAsync(c => c.UserId == userId, token);
+      await _dbContext.TwitchUserConfig.FirstOrDefaultAsync(c => c.UserId == userId, token).ConfigureAwait(false);
     if (null == configDb) {
       await _dbContext.TwitchUserConfig.AddAsync(new Api.Model.Ddl.TwitchUserConfig {
         BanKnownBots = config.BanKnownBots,
         Enabled = config.IsEnabled,
         UserId = userId,
         UpdatedOn = DateTime.UtcNow
-      }, token);
+      }, token).ConfigureAwait(false);
     }
     else {
       configDb.Enabled = config.IsEnabled;
@@ -183,7 +183,7 @@ public class BotController : ControllerBase {
       configDb.UpdatedOn = DateTime.UtcNow;
     }
 
-    await _dbContext.SaveChangesAsync(token);
+    await _dbContext.SaveChangesAsync(token).ConfigureAwait(false);
     return Ok(config);
   }
 }

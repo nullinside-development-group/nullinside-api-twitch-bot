@@ -68,9 +68,9 @@ public abstract class ABotRule : IBotRule {
 
     // Perform the ban and get the list of people actually banned
     IEnumerable<BannedUser> confirmedBans =
-      await botProxy.BanChannelUsers(channelId, Constants.BOT_ID, bansToTry, reason, stoppingToken);
+      await botProxy.BanChannelUsers(channelId, Constants.BOT_ID, bansToTry, reason, stoppingToken).ConfigureAwait(false);
 
-    await db.SaveTwitchBans(channelId, users, reason, stoppingToken);
+    await db.SaveTwitchBans(channelId, users, reason, stoppingToken).ConfigureAwait(false);
     return confirmedBans;
   }
 }
