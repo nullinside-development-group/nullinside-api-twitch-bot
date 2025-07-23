@@ -25,12 +25,12 @@ public abstract class AChatRuleUnitTestBase<T> : UnitTestBase where T : AChatRul
 
     // Process the message and assert that we pass the message.
     var chat = new TwitchChatMessage(true, goodString, "123", "456");
-    bool result = await rule.Handle("123", botProxy.Object, chat, _db);
+    bool result = await rule.Handle("123", botProxy.Object, chat, _db).ConfigureAwait(false);
     Assert.That(result, Is.True);
 
     // Process the message and assert that we pass the message.
     chat = new TwitchChatMessage(false, goodString, "123", "456");
-    result = await rule.Handle("123", botProxy.Object, chat, _db);
+    result = await rule.Handle("123", botProxy.Object, chat, _db).ConfigureAwait(false);
     Assert.That(result, Is.True);
   }
 

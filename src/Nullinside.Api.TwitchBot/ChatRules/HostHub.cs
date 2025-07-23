@@ -25,7 +25,7 @@ public class HostHub : AChatRule {
     // Message will contain the site name with different domains.
     if (message.IsFirstMessage && normalized.Contains("hosthub.")) {
       await BanAndLog(channelId, botProxy, new[] { (message.UserId, message.Username) },
-        "[Bot] Spam (HostHub)", db, stoppingToken);
+        "[Bot] Spam (HostHub)", db, stoppingToken).ConfigureAwait(false);
       return false;
     }
 

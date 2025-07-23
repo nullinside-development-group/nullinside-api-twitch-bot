@@ -36,7 +36,7 @@ public class IfYouWantViewers : AChatRule {
     foreach (string expected in Expected) {
       if (normalized.Contains(expected, StringComparison.InvariantCultureIgnoreCase)) {
         await BanAndLog(channelId, botProxy, new[] { (message.UserId, message.Username) },
-          "[Bot] Spam (If You Want Viewers)", db, stoppingToken);
+          "[Bot] Spam (If You Want Viewers)", db, stoppingToken).ConfigureAwait(false);
         return false;
       }
     }

@@ -35,7 +35,7 @@ public class DiscordTests : AChatRuleUnitTestBase<Discord> {
     var chat = new TwitchChatMessage(true, badString, "123", "456");
 
     // Process the message and assert that we fail the message.
-    bool result = await rule.Handle("123", botProxy.Object, chat, _db);
+    bool result = await rule.Handle("123", botProxy.Object, chat, _db).ConfigureAwait(false);
     Assert.That(result, Is.False);
   }
 
@@ -52,7 +52,7 @@ public class DiscordTests : AChatRuleUnitTestBase<Discord> {
     var chat = new TwitchChatMessage(true, message, "123", "456");
 
     // Process the message and assert that we do not fail the message.
-    bool result = await rule.Handle("123", botProxy.Object, chat, _db);
+    bool result = await rule.Handle("123", botProxy.Object, chat, _db).ConfigureAwait(false);
     Assert.That(result, Is.True);
   }
 }

@@ -25,7 +25,7 @@ public class Streamboo : AChatRule {
     // Message will start with any of these variations.
     if (message.IsFirstMessage && normalized.Contains("streamboo")) {
       await BanAndLog(channelId, botProxy, new[] { (message.UserId, message.Username) },
-        "[Bot] Spam (Streamboo)", db, stoppingToken);
+        "[Bot] Spam (Streamboo)", db, stoppingToken).ConfigureAwait(false);
       return false;
     }
 

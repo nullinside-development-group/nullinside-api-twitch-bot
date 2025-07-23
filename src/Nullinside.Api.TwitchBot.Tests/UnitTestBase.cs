@@ -28,6 +28,6 @@ public abstract class UnitTestBase {
   [TearDown]
   public virtual async Task TearDown() {
     // Dispose since it has one.
-    await _db.DisposeAsync();
+    await _db.DisposeAsync().ConfigureAwait(false);
   }
 }

@@ -1,4 +1,5 @@
 ﻿using System.Diagnostics;
+using System.Runtime.CompilerServices;
 
 using log4net;
 
@@ -63,19 +64,20 @@ public static class NullinsideContextExtensions {
       bool failed = false;
 
       // Database locking requires transaction scope
-      await using IDbContextTransaction scope = await db.Database.BeginTransactionAsync(stoppingToken);
+      IDbContextTransaction scope = await db.Database.BeginTransactionAsync(stoppingToken).ConfigureAwait(false);
+      await using ConfiguredAsyncDisposable scope1 = scope.ConfigureAwait(false);
 
       // Perform the database lock
       using var dbLock = new DatabaseLock(db);
       var sw = new Stopwatch();
       sw.Start();
-      await dbLock.GetLock(BOT_REFRESH_TOKEN_LOCK_NAME, stoppingToken);
+      await dbLock.GetLock(BOT_REFRESH_TOKEN_LOCK_NAME, stoppingToken).ConfigureAwait(false);
       LOG.Info($"bot_refresh_token: {sw.Elapsed}");
       sw.Stop();
 
       try {
         // Get the user with the database lock acquired.
-        User? updatedUser = await db.Users.AsNoTracking().FirstOrDefaultAsync(u => u.Id == user.Id, stoppingToken);
+        User? updatedUser = await db.Users.AsNoTracking().FirstOrDefaultAsync(u => u.Id == user.Id, stoppingToken).ConfigureAwait(false);
         if (null == updatedUser) {
           return null;
         }
@@ -87,20 +89,20 @@ public static class NullinsideContextExtensions {
         }
 
         // Refresh the token with the Twitch API.
-        TwitchAccessToken? newToken = await api.RefreshAccessToken(stoppingToken);
+        TwitchAccessToken? newToken = await api.RefreshAccessToken(stoppingToken).ConfigureAwait(false);
         if (null == newToken) {
           return null;
         }
 
         // Update the credentials in the database.
-        await db.UpdateOAuthInDatabase(user.Id, newToken, stoppingToken);
+        await db.UpdateOAuthInDatabase(user.Id, newToken, stoppingToken).ConfigureAwait(false);
         return api;
       }
       catch {
         failed = true;
       }
       finally {
-        await dbLock.ReleaseLock(BOT_REFRESH_TOKEN_LOCK_NAME, stoppingToken);
+        await dbLock.ReleaseLock(BOT_REFRESH_TOKEN_LOCK_NAME, stoppingToken).ConfigureAwait(false);
 
         if (!failed) {
           scope.Commit();
@@ -108,7 +110,7 @@ public static class NullinsideContextExtensions {
       }
 
       return null;
-    });
+    }).ConfigureAwait(false);
   }
 
   /// <summary>
@@ -121,7 +123,7 @@ public static class NullinsideContextExtensions {
   /// <returns>The number of state entries written to the database.</returns>
   private static async Task<int> UpdateOAuthInDatabase(this INullinsideContext db, int userId,
     TwitchAccessToken oAuth, CancellationToken stoppingToken = new()) {
-    User? row = await db.Users.FirstOrDefaultAsync(u => u.Id == userId && !u.IsBanned, stoppingToken);
+    User? row = await db.Users.FirstOrDefaultAsync(u => u.Id == userId && !u.IsBanned, stoppingToken).ConfigureAwait(false);
     if (null == row) {
       return -1;
     }
@@ -129,7 +131,7 @@ public static class NullinsideContextExtensions {
     row.TwitchToken = oAuth.AccessToken;
     row.TwitchRefreshToken = oAuth.RefreshToken;
     row.TwitchTokenExpiration = oAuth.ExpiresUtc;
-    return await db.SaveChangesAsync(stoppingToken);
+    return await db.SaveChangesAsync(stoppingToken).ConfigureAwait(false);
   }
 
   /// <summary>
@@ -143,12 +145,12 @@ public static class NullinsideContextExtensions {
     ITwitchApiProxy api, CancellationToken stoppingToken = new()) {
     // Get the bot user's information.
     User? botUser = await db.Users.AsNoTracking()
-      .FirstOrDefaultAsync(u => u.TwitchId == Constants.BOT_ID, stoppingToken);
+      .FirstOrDefaultAsync(u => u.TwitchId == Constants.BOT_ID, stoppingToken).ConfigureAwait(false);
     if (null == botUser) {
       throw new Exception("No bot user in database");
     }
 
-    return await ConfigureApiAndRefreshToken(db, botUser, api, stoppingToken);
+    return await ConfigureApiAndRefreshToken(db, botUser, api, stoppingToken).ConfigureAwait(false);
   }
 
   /// <summary>
@@ -166,7 +168,7 @@ public static class NullinsideContextExtensions {
           .ToList()
       )
       .On(v => new { v.TwitchId })
-      .RunAsync(stoppingToken);
+      .RunAsync(stoppingToken).ConfigureAwait(false);
 
     await db.TwitchBan.UpsertRange(
         bannedUsers.Select(i => new TwitchBan {
@@ -177,6 +179,6 @@ public static class NullinsideContextExtensions {
         }).ToList()
       )
       .On(v => new { v.ChannelId, v.BannedUserTwitchId, v.Timestamp })
-      .RunAsync(stoppingToken);
+      .RunAsync(stoppingToken).ConfigureAwait(false);
   }
 }

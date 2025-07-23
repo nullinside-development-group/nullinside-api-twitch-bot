@@ -26,7 +26,7 @@ public class Nezhna : AChatRule {
 
     if (message.Message.Contains(SPAM, StringComparison.InvariantCultureIgnoreCase)) {
       await BanAndLog(channelId, botProxy, new[] { (message.UserId, message.Username) },
-        "[Bot] Spam (Nezhna)", db, stoppingToken);
+        "[Bot] Spam (Nezhna)", db, stoppingToken).ConfigureAwait(false);
       return false;
     }
 
