@@ -1,7 +1,11 @@
+using System.Text;
+
 using log4net;
 
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+
+using Newtonsoft.Json;
 
 using Nullinside.Api.Common.Twitch;
 using Nullinside.Api.Common.Twitch.Support;
@@ -75,12 +79,13 @@ public class LoginController : ControllerBase {
       return Redirect($"{siteUrl}/twitch/bot/config?error={TwitchBotLoginErrors.INTERNAL_ERROR}");
     }
 
-    string? bearerToken = await UserHelpers.GenerateTokenAndSaveToDatabase(_dbContext, email, token, api.OAuth?.AccessToken,
-      api.OAuth?.RefreshToken, api.OAuth?.ExpiresUtc, user.Login, user.Id).ConfigureAwait(false);
-    if (string.IsNullOrWhiteSpace(bearerToken)) {
+    var bearerToken = await UserHelpers.GenerateTokenAndSaveToDatabase(_dbContext, email, Constants.OAUTH_TOKEN_TIME_LIMIT, api.OAuth?.AccessToken,
+      api.OAuth?.RefreshToken, api.OAuth?.ExpiresUtc, user.Login, user.Id, token).ConfigureAwait(false);
+    if (null == bearerToken) {
       return Redirect($"{siteUrl}/twitch/bot/config?error={TwitchBotLoginErrors.INTERNAL_ERROR}");
     }
 
-    return Redirect($"{siteUrl}/twitch/bot/config?token={bearerToken}");
+    var json = JsonConvert.SerializeObject(bearerToken);
+    return Redirect($"{siteUrl}/twitch/bot/config?token={Convert.ToBase64String(Encoding.UTF8.GetBytes(json))}");
   }
 }
