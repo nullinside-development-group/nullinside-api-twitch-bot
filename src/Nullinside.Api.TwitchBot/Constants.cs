@@ -18,6 +18,11 @@ public static class Constants {
   ///   The twitch id for the bot account.
   /// </summary>
   public const string BOT_ID = "640082552";
+  
+  /// <summary>
+  /// The amount of time a token is valid for.
+  /// </summary>
+  public static readonly TimeSpan OAUTH_TOKEN_TIME_LIMIT = TimeSpan.FromHours(1);
 
   // TODO: This should be dynamic but I need to find a source of "good bots" lists. Might have to cheap out and just do a database table with data entry. Let users of the bot submit suggestions that we approve manually.
   /// <summary>

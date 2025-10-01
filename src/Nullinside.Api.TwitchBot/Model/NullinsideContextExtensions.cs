@@ -7,6 +7,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Storage;
 
 using Nullinside.Api.Common;
+using Nullinside.Api.Common.Auth;
 using Nullinside.Api.Common.Twitch;
 using Nullinside.Api.Model;
 using Nullinside.Api.Model.Ddl;
@@ -34,7 +35,7 @@ public static class NullinsideContextExtensions {
   /// <param name="api">The twitch api object currently in use.</param>
   /// <returns>The twitch api.</returns>
   public static void Configure(this ITwitchApiProxy api, User user) {
-    api.OAuth = new TwitchAccessToken {
+    api.OAuth = new OAuthToken {
       AccessToken = user.TwitchToken,
       RefreshToken = user.TwitchRefreshToken,
       ExpiresUtc = user.TwitchTokenExpiration
@@ -89,7 +90,7 @@ public static class NullinsideContextExtensions {
         }
 
         // Refresh the token with the Twitch API.
-        TwitchAccessToken? newToken = await api.RefreshAccessToken(stoppingToken).ConfigureAwait(false);
+        OAuthToken? newToken = await api.RefreshAccessToken(stoppingToken).ConfigureAwait(false);
         if (null == newToken) {
           return null;
         }
@@ -122,7 +123,7 @@ public static class NullinsideContextExtensions {
   /// <param name="stoppingToken">The stopping token.</param>
   /// <returns>The number of state entries written to the database.</returns>
   private static async Task<int> UpdateOAuthInDatabase(this INullinsideContext db, int userId,
-    TwitchAccessToken oAuth, CancellationToken stoppingToken = new()) {
+    OAuthToken oAuth, CancellationToken stoppingToken = new()) {
     User? row = await db.Users.FirstOrDefaultAsync(u => u.Id == userId && !u.IsBanned, stoppingToken).ConfigureAwait(false);
     if (null == row) {
       return -1;
