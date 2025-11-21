@@ -3,7 +3,7 @@ using System.Reflection;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.OpenApi.Models;
+using Microsoft.OpenApi;
 
 using Nullinside.Api.Common;
 using Nullinside.Api.Common.AspNetCore.Middleware;
@@ -64,21 +64,6 @@ builder.Services.AddSwaggerGen(c => {
     In = ParameterLocation.Header,
     Type = SecuritySchemeType.ApiKey,
     Scheme = "Bearer"
-  });
-
-  c.AddSecurityRequirement(new OpenApiSecurityRequirement {
-    {
-      new OpenApiSecurityScheme {
-        Reference = new OpenApiReference {
-          Type = ReferenceType.SecurityScheme,
-          Id = "Bearer"
-        },
-        Scheme = "oauth2",
-        Name = "Bearer",
-        In = ParameterLocation.Header
-      },
-      new List<string>()
-    }
   });
 
   string xmlFile = $"{Assembly.GetExecutingAssembly().GetName().Name}.xml";
