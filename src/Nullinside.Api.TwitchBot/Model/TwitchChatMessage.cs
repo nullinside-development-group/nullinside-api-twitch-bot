@@ -5,9 +5,9 @@ using TwitchLib.Client.Models;
 namespace Nullinside.Api.TwitchBot.Model;
 
 /// <summary>
-///   This wrapper exists for unit testing purposes. It's nice passing the <see cref="ChatMessage" /> around only because
+///   This wrapper exists for unit testing purposes. It's nice passing the <see cref="TwitchChatMessage" /> around only because
 ///   it promotes discoverability with what chat messages can possess. However, we can't construct a
-///   <see cref="ChatMessage" /> easily in the unit tests and thus we need a wrapper that we can mess with that may or may
+///   <see cref="TwitchChatMessage" /> easily in the unit tests and thus we need a wrapper that we can mess with that may or may
 ///   not have a source.
 /// </summary>
 [ExcludeFromCodeCoverage]
@@ -30,11 +30,11 @@ public class TwitchChatMessage {
   ///   Initializes a new instance of the <see cref="TwitchChatMessage" /> class.
   /// </summary>
   /// <param name="message">The chat message from twitch.</param>
-  public TwitchChatMessage(ChatMessage message) {
+  public TwitchChatMessage(Common.Twitch.Support.TwitchChatMessage message) {
 #if DEBUG
     Raw = message;
 #endif
-    IsFirstMessage = message.IsFirstMessage;
+    IsFirstMessage = message.IsFirstTimeMessage;
     Message = message.Message;
     UserId = message.UserId;
     Username = message.Username;
@@ -64,6 +64,6 @@ public class TwitchChatMessage {
   /// <summary>
   ///   FOR DEBUGGING PURPOSES ONLY!
   /// </summary>
-  public ChatMessage? Raw { get; }
+  public Common.Twitch.Support.TwitchChatMessage? Raw { get; }
 #endif
 }
