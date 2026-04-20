@@ -229,7 +229,6 @@ public class MainService : BackgroundService {
     lock (_receivedBans) {
       db.TwitchUserBannedOutsideOfBotLogs.AddRange(_receivedBans.Select(b => new TwitchUserBannedOutsideOfBotLogs {
         Channel = b.UserBan.Channel,
-        Reason = b.UserBan.BanReason,
         Timestamp = DateTime.UtcNow,
         TwitchId = b.UserBan.TargetUserId,
         TwitchUsername = b.UserBan.Username
