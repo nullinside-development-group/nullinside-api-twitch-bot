@@ -186,6 +186,15 @@ public class MainService : BackgroundService {
               usersWithBotEnabled = usersWithBotEnabled
                 .Where(u => moddedChannels.Select(m => m.broadcaster_id).Contains(u.TwitchId))
                 .ToList();
+              
+              // If any channels have a different name now, lets update our copy in the database.
+              foreach (TwitchModeratedChannel channel in moddedChannels) {
+                var user = db.Users.FirstOrDefault(u => u.TwitchId == channel.broadcaster_id);
+                if (null != user && user.TwitchUsername != channel.broadcaster_login) {
+                  user.TwitchUsername = channel.broadcaster_login;
+                  await db.SaveChangesAsync(stoppingToken).ConfigureAwait(false);
+                }
+              }
 
               // Join all the channels we're a mod in. Why do we limit it to channels we are a mod in? Twitch changed
               // its chat limits so that "verified bots" like us don't get special treatment anymore. The only thing
