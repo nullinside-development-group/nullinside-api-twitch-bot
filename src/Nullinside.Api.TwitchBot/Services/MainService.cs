@@ -15,6 +15,8 @@ using Nullinside.Api.TwitchBot.Model;
 using TwitchLib.Client.Events;
 using TwitchLib.Client.Models;
 
+using TwitchUserConfig = Nullinside.Api.Model.Ddl.TwitchUserConfig;
+
 namespace Nullinside.Api.TwitchBot.Services;
 
 /// <summary>
@@ -156,6 +158,20 @@ public class MainService : BackgroundService {
           await using (db.ConfigureAwait(false)) {
             // Send logs to database
             DumpLogsToDatabase(db);
+            
+            // Get the users without a configuration
+            List<User>? usersWithoutConfigurations = await GetUsersWithoutConfigurations(db, stoppingToken).ConfigureAwait(false);
+            if (null != usersWithoutConfigurations) {
+              await db.TwitchUserConfig.AddRangeAsync(usersWithoutConfigurations.Select(u => new TwitchUserConfig {
+                UserId = u.Id,
+                BanKnownBots = true,
+                Enabled = true,
+                UpdatedOn = DateTime.UtcNow
+              }), stoppingToken).ConfigureAwait(false);
+              
+              await db.SaveChangesAsync(stoppingToken).ConfigureAwait(false);
+              _log.Info($"Added {usersWithoutConfigurations.Count} users without configurations");
+            }
 
             // Get the list of users with the bot enabled.
             List<User>? usersWithBotEnabled = await GetUsersWithBotEnabled(db, stoppingToken).ConfigureAwait(false);
@@ -298,6 +314,24 @@ public class MainService : BackgroundService {
         select user)
       .Include(u => u.TwitchConfig)
       .Where(u => null != u.TwitchConfig && u.TwitchConfig.Enabled)
+      .AsNoTracking()
+      .ToListAsync(stoppingToken).ConfigureAwait(false);
+  }
+  
+  /// <summary>
+  ///   Retrieve all users that have the bot enabled.
+  /// </summary>
+  /// <param name="db">The database.</param>
+  /// <param name="stoppingToken">The stopping token.</param>
+  /// <returns>The list of users with the bot enabled.</returns>
+  private async Task<List<User>?> GetUsersWithoutConfigurations(INullinsideContext db, CancellationToken stoppingToken) {
+    return await
+      (from user in db.Users
+        orderby user.TwitchLastScanned
+        where user.TwitchId != Constants.BOT_ID
+        select user)
+      .Include(u => u.TwitchConfig)
+      .Where(u => null == u.TwitchConfig)
       .AsNoTracking()
       .ToListAsync(stoppingToken).ConfigureAwait(false);
   }
