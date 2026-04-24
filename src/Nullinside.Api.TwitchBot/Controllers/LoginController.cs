@@ -6,6 +6,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 using Newtonsoft.Json;
+using Newtonsoft.Json.Serialization;
 
 using Nullinside.Api.Common.Twitch;
 using Nullinside.Api.Common.Twitch.Support;
@@ -85,7 +86,9 @@ public class LoginController : ControllerBase {
       return Redirect($"{siteUrl}/twitch/bot/config?error={TwitchBotLoginErrors.INTERNAL_ERROR}");
     }
 
-    var json = JsonConvert.SerializeObject(bearerToken);
+    string json = JsonConvert.SerializeObject(bearerToken, new JsonSerializerSettings {
+      ContractResolver = new CamelCasePropertyNamesContractResolver()
+    });
     return Redirect($"{siteUrl}/twitch/bot/config?token={Convert.ToBase64String(Encoding.UTF8.GetBytes(json))}");
   }
 }
