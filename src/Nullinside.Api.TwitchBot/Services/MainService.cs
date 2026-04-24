@@ -159,9 +159,9 @@ public class MainService : BackgroundService {
             // Send logs to database
             DumpLogsToDatabase(db);
             
-            // Get the users without a configuration
+            // Get the users without a configuration and give them one
             List<User>? usersWithoutConfigurations = await GetUsersWithoutConfigurations(db, stoppingToken).ConfigureAwait(false);
-            if (null != usersWithoutConfigurations) {
+            if (null != usersWithoutConfigurations && usersWithoutConfigurations.Count > 0) {
               await db.TwitchUserConfig.AddRangeAsync(usersWithoutConfigurations.Select(u => new TwitchUserConfig {
                 UserId = u.Id,
                 BanKnownBots = true,
