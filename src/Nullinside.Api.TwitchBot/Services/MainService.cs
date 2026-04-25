@@ -13,9 +13,7 @@ using Nullinside.Api.TwitchBot.Bots;
 using Nullinside.Api.TwitchBot.ChatRules;
 using Nullinside.Api.TwitchBot.Model;
 
-using TwitchLib.Client.Events;
-using TwitchLib.Client.Models;
-
+using TwitchChatMessage = Nullinside.Api.Common.Twitch.Support.TwitchChatMessage;
 using TwitchUserConfig = Nullinside.Api.Model.Ddl.TwitchUserConfig;
 
 namespace Nullinside.Api.TwitchBot.Services;
@@ -71,7 +69,7 @@ public class MainService : BackgroundService {
   /// <summary>
   ///   The queue of twitch chat messages consumed by <see cref="_chatMessageConsumer" /> for the enforcement of rules.
   /// </summary>
-  private readonly BlockingCollection<Common.Twitch.Support.TwitchChatMessage> _receivedMessageProcessingQueue = new();
+  private readonly BlockingCollection<TwitchChatMessage> _receivedMessageProcessingQueue = new();
 
   /// <summary>
   ///   A collection of all chat messages.
@@ -80,7 +78,7 @@ public class MainService : BackgroundService {
   ///   We keep these to cross-reference with the <see cref="_receivedBans" /> so we can detect possible
   ///   bot messages. This helps identify bots like the ones that post "Click here for viewers: scam.com".
   /// </remarks>
-  private readonly List<Common.Twitch.Support.TwitchChatMessage> _receivedMessages = new();
+  private readonly List<TwitchChatMessage> _receivedMessages = new();
 
   /// <summary>
   ///   The service scope.
@@ -110,8 +108,8 @@ public class MainService : BackgroundService {
   ///   Called when the twitch client is disconnected.
   /// </summary>
   private void OnTwitchClientDisconected() {
-    _log.Info("Twitch Client Disconnected, exiting app");
-    Environment.Exit(0);
+    //_log.Info("Twitch Client Disconnected, exiting app");
+    //Environment.Exit(0);
   }
 
   /// <summary>
@@ -159,7 +157,7 @@ public class MainService : BackgroundService {
           await using (db.ConfigureAwait(false)) {
             // Send logs to database
             DumpLogsToDatabase(db);
-            
+
             // Get the users without a configuration and give them one
             List<User>? usersWithoutConfigurations = await GetUsersWithoutConfigurations(db, stoppingToken).ConfigureAwait(false);
             if (null != usersWithoutConfigurations && usersWithoutConfigurations.Count > 0) {
@@ -169,7 +167,7 @@ public class MainService : BackgroundService {
                 Enabled = true,
                 UpdatedOn = DateTime.UtcNow
               }), stoppingToken).ConfigureAwait(false);
-              
+
               await db.SaveChangesAsync(stoppingToken).ConfigureAwait(false);
               _log.Info($"Added {usersWithoutConfigurations.Count} users without configurations");
             }
@@ -203,10 +201,10 @@ public class MainService : BackgroundService {
               usersWithBotEnabled = usersWithBotEnabled
                 .Where(u => moddedChannels.Select(m => m.broadcaster_id).Contains(u.TwitchId))
                 .ToList();
-              
+
               // If any channels have a different name now, lets update our copy in the database.
               foreach (TwitchModeratedChannel channel in moddedChannels) {
-                var user = db.Users.FirstOrDefault(u => u.TwitchId == channel.broadcaster_id);
+                User? user = db.Users.FirstOrDefault(u => u.TwitchId == channel.broadcaster_id);
                 if (null != user && user.TwitchUsername != channel.broadcaster_login) {
                   user.TwitchUsername = channel.broadcaster_login;
                   await db.SaveChangesAsync(stoppingToken).ConfigureAwait(false);
@@ -293,7 +291,7 @@ public class MainService : BackgroundService {
   ///   Records chat messages for all our user's chats.
   /// </summary>
   /// <param name="msg">The chat message.</param>
-  private void OnTwitchMessageReceived(Common.Twitch.Support.TwitchChatMessage msg) {
+  private void OnTwitchMessageReceived(TwitchChatMessage msg) {
     _receivedMessageProcessingQueue.Add(msg);
 
     lock (_receivedMessages) {
@@ -319,7 +317,7 @@ public class MainService : BackgroundService {
       .AsNoTracking()
       .ToListAsync(stoppingToken).ConfigureAwait(false);
   }
-  
+
   /// <summary>
   ///   Retrieve all users that have the bot enabled.
   /// </summary>
