@@ -6,6 +6,7 @@ using Microsoft.EntityFrameworkCore;
 
 using Nullinside.Api.Common.Twitch;
 using Nullinside.Api.Common.Twitch.Json;
+using Nullinside.Api.Common.Twitch.Support;
 using Nullinside.Api.Model;
 using Nullinside.Api.Model.Ddl;
 using Nullinside.Api.TwitchBot.Bots;
@@ -65,12 +66,12 @@ public class MainService : BackgroundService {
   ///   We keep these to cross-reference with the <see cref="_receivedMessages" /> so we can detect possible
   ///   bot messages. This helps identify bots like the ones that post "Click here for viewers: scam.com".
   /// </remarks>
-  private readonly List<OnUserBannedArgs> _receivedBans = new();
+  private readonly List<TwitchChatBan> _receivedBans = new();
 
   /// <summary>
   ///   The queue of twitch chat messages consumed by <see cref="_chatMessageConsumer" /> for the enforcement of rules.
   /// </summary>
-  private readonly BlockingCollection<ChatMessage> _receivedMessageProcessingQueue = new();
+  private readonly BlockingCollection<Common.Twitch.Support.TwitchChatMessage> _receivedMessageProcessingQueue = new();
 
   /// <summary>
   ///   A collection of all chat messages.
@@ -79,7 +80,7 @@ public class MainService : BackgroundService {
   ///   We keep these to cross-reference with the <see cref="_receivedBans" /> so we can detect possible
   ///   bot messages. This helps identify bots like the ones that post "Click here for viewers: scam.com".
   /// </remarks>
-  private readonly List<OnMessageReceivedArgs> _receivedMessages = new();
+  private readonly List<Common.Twitch.Support.TwitchChatMessage> _receivedMessages = new();
 
   /// <summary>
   ///   The service scope.
@@ -253,10 +254,11 @@ public class MainService : BackgroundService {
   private void DumpLogsToDatabase(INullinsideContext db) {
     lock (_receivedBans) {
       db.TwitchUserBannedOutsideOfBotLogs.AddRange(_receivedBans.Select(b => new TwitchUserBannedOutsideOfBotLogs {
-        Channel = b.UserBan.Channel,
+        Channel = b.Channel,
+        Reason = b.BanReason,
         Timestamp = DateTime.UtcNow,
-        TwitchId = b.UserBan.TargetUserId,
-        TwitchUsername = b.UserBan.Username
+        TwitchId = b.TargetUserId,
+        TwitchUsername = b.Username
       }));
 
       _receivedBans.Clear();
@@ -264,10 +266,10 @@ public class MainService : BackgroundService {
 
     lock (_receivedMessages) {
       db.TwitchUserChatLogs.AddRange(_receivedMessages.Select(m => new TwitchUserChatLogs {
-        Channel = m.ChatMessage.Channel,
-        TwitchId = m.ChatMessage.UserId,
-        TwitchUsername = m.ChatMessage.Username,
-        Message = m.ChatMessage.Message,
+        Channel = m.Channel,
+        TwitchId = m.UserId,
+        TwitchUsername = m.Username,
+        Message = m.Message,
         Timestamp = DateTime.UtcNow // TODO: Convert the tmi-ts to a datetime.
       }));
 
@@ -280,22 +282,22 @@ public class MainService : BackgroundService {
   /// <summary>
   ///   Records bans for all of our user's chats.
   /// </summary>
-  /// <param name="e">The ban.</param>
-  private void OnTwitchBanReceived(OnUserBannedArgs e) {
+  /// <param name="ban">The ban.</param>
+  private void OnTwitchBanReceived(TwitchChatBan ban) {
     lock (_receivedBans) {
-      _receivedBans.Add(e);
+      _receivedBans.Add(ban);
     }
   }
 
   /// <summary>
   ///   Records chat messages for all our user's chats.
   /// </summary>
-  /// <param name="e">The chat message.</param>
-  private void OnTwitchMessageReceived(OnMessageReceivedArgs e) {
-    _receivedMessageProcessingQueue.Add(e.ChatMessage);
+  /// <param name="msg">The chat message.</param>
+  private void OnTwitchMessageReceived(Common.Twitch.Support.TwitchChatMessage msg) {
+    _receivedMessageProcessingQueue.Add(msg);
 
     lock (_receivedMessages) {
-      _receivedMessages.Add(e);
+      _receivedMessages.Add(msg);
     }
   }
 

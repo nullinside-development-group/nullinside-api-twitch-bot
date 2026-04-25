@@ -30,7 +30,12 @@ builder.Services.AddDbContext<INullinsideContext, NullinsideContext>(optionsBuil
     }), ServiceLifetime.Transient);
 builder.Services.AddScoped<IAuthorizationHandler, BasicAuthorizationHandler>();
 builder.Services.AddScoped<ITwitchApiProxy, TwitchApiProxy>();
-builder.Services.AddSingleton<ITwitchClientProxy>(_ => TwitchClientProxy.Instance);
+
+var loggerFactory = LoggerFactory.Create(c => c
+    .AddConsole()
+  //    .SetMinimumLevel(LogLevel.Trace) // uncomment to view raw messages received from twitch
+);
+builder.Services.AddSingleton<ITwitchClientProxy, TwitchClientProxy>();
 builder.Services.AddHostedService<MainService>();
 builder.Services.AddAuthentication()
   .AddScheme<AuthenticationSchemeOptions, BasicAuthenticationHandler>("Bearer", _ => { });

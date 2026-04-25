@@ -46,7 +46,7 @@ public class TwitchChatMessageMonitorConsumer : IDisposable {
   /// <summary>
   ///   The non-priority queue to scan messages from.
   /// </summary>
-  private readonly BlockingCollection<ChatMessage> _queue;
+  private readonly BlockingCollection<Common.Twitch.Support.TwitchChatMessage> _queue;
 
   /// <summary>
   ///   The thread responsible for scanning channels for bots.
@@ -64,7 +64,7 @@ public class TwitchChatMessageMonitorConsumer : IDisposable {
   /// <param name="db">The database.</param>
   /// <param name="api">The twitch api.</param>
   /// <param name="queue">The non-priority queue to scan messages from.</param>
-  public TwitchChatMessageMonitorConsumer(INullinsideContext db, ITwitchApiProxy api, BlockingCollection<ChatMessage> queue) {
+  public TwitchChatMessageMonitorConsumer(INullinsideContext db, ITwitchApiProxy api, BlockingCollection<Common.Twitch.Support.TwitchChatMessage> queue) {
     _db = db;
     _queue = queue;
     _api = api;
@@ -107,7 +107,7 @@ public class TwitchChatMessageMonitorConsumer : IDisposable {
     while (!_poisonPill) {
       try {
         // Try to get a message from one of the two queues.
-        ChatMessage? message;
+        Common.Twitch.Support.TwitchChatMessage? message;
         _queue.TryTake(out message);
 
         // If we didn't get a message, loop.
