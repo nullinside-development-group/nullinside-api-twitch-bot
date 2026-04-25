@@ -22,7 +22,20 @@ public class Discord : AChatRule {
     "my discord username",
     "my username",
     "connect on discord",
-    "hit me up"
+    "hit me up",
+    "d1sc0rd",
+    "dis cord",
+    "add me on discord",
+    "add me on dis cord",
+    "add him on discord",
+    "connect on discord",
+    "my discord handle",
+    "my discord is",
+    "discord user name is",
+    "hit him up on discord",
+    "add me on discord",
+    "add me on dis-cord",
+    "dis cord"
   ];
 
   /// <inheritdoc />
