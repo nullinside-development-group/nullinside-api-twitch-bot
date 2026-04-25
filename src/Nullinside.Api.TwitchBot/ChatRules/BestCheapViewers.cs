@@ -17,7 +17,22 @@ public class BestCheapViewers : AChatRule {
     "best viewers on",
     "cheap viewers on",
     "cheap folloewrs on",
-    "do you want more viewers and to rank higher on the twitch list? you can visit the website"
+    "do you want more viewers and to rank higher on the twitch list? you can visit the website",
+    "best viewers",
+    "top viewers",
+    "cheap viewers",
+    "cheapest viewers",
+    "buy viewers",
+    "want popularity",
+    "become popular with",
+    "promote twitch channels",
+    "boosting channels",
+    "streaming into the void",
+    "get new real viewers",
+    "viewers",
+    "top viewers",
+    "specialize in promoting twitch channels",
+    "stream viewers"
   ];
 
   /// <inheritdoc />
@@ -40,17 +55,17 @@ public class BestCheapViewers : AChatRule {
     // will be accent marks. When we receive an accent mark it'll take the position of a real character, hence why we
     // need an offset applied only to the incoming string.
     foreach (string expected in Expected) {
-      if (normalized.Length > expected.Length) {
+      for (int start = 0; start <= normalized.Length - expected.Length; start++) {
         int matches = 0;
         int offset = 0;
         for (int i = 0; i < expected.Length; i++) {
           // If this is a normal character it should be in the correct position.
-          if (i + offset < normalized.Length && normalized[i + offset] == expected[i]) {
+          if (start + i + offset < normalized.Length && normalized[start + i + offset] == expected[i]) {
             ++matches;
           }
           // If this is an accent mark then the next character should match and the whole string we're evalutating
           // will be off by 1 more position.
-          else if (i + offset + 1 < normalized.Length && normalized[i + offset + 1] == expected[i]) {
+          else if (start + i + offset + 1 < normalized.Length && normalized[start + i + offset + 1] == expected[i]) {
             ++matches;
             ++offset;
           }
@@ -60,7 +75,8 @@ public class BestCheapViewers : AChatRule {
         // used to confuse us.
         if (matches > expected.Length - 3) {
           (string UserId, string Username)[] users = new[] { (message.UserId, message.Username) };
-          await BanAndLog(channelId, botProxy, users, "[Bot] Spam (Best Cheap Viewers)", db, stoppingToken).ConfigureAwait(false);
+          await BanAndLog(channelId, botProxy, users, "[Bot] Spam (Best Cheap Viewers)", db, stoppingToken)
+            .ConfigureAwait(false);
           return false;
         }
       }
