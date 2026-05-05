@@ -186,4 +186,19 @@ public class BotController : ControllerBase {
     await _dbContext.SaveChangesAsync(token).ConfigureAwait(false);
     return Ok(config);
   }
+
+  /// <summary>
+  ///   Retrieves all currently live individuals on twitch.
+  /// </summary>
+  [AllowAnonymous]
+  [HttpGet("live")]
+  [ProducesResponseType(StatusCodes.Status200OK)]
+  public async Task<ObjectResult> GetAllLiveBotStreams(CancellationToken token = new()) {
+    List<TwitchUserLive> currentlyLive = await _dbContext.TwitchUserLive
+      .Include(u => u.User)
+      .ToListAsync(token)
+      .ConfigureAwait(false);
+
+    return Ok(currentlyLive.Select(u => new TwitchLiveUsersResponse(u)).ToList());
+  }
 }
