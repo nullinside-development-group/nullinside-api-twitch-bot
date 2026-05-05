@@ -13,8 +13,6 @@ using Nullinside.Api.TwitchBot.Model;
 
 using TwitchLib.Api.Helix.Models.Moderation.GetModerators;
 
-using TwitchUserConfig = Nullinside.Api.TwitchBot.Model.TwitchUserConfig;
-
 namespace Nullinside.Api.TwitchBot.Controllers;
 
 /// <summary>
@@ -119,18 +117,20 @@ public class BotController : ControllerBase {
       return Unauthorized();
     }
 
-    Api.Model.Ddl.TwitchUserConfig? config =
+    TwitchUserConfig? config =
       await _dbContext.TwitchUserConfig.FirstOrDefaultAsync(c => c.UserId == user.Id, token).ConfigureAwait(false);
     if (null == config) {
-      return Ok(new TwitchUserConfig {
+      return Ok(new TwitchUserConfigResponse {
         IsEnabled = true,
-        BanKnownBots = true
+        BanKnownBots = true,
+        ShowOnHomePage = true
       });
     }
 
-    return Ok(new TwitchUserConfig {
+    return Ok(new TwitchUserConfigResponse {
       IsEnabled = config.Enabled,
-      BanKnownBots = config.BanKnownBots
+      BanKnownBots = config.BanKnownBots,
+      ShowOnHomePage = config.ShowOnHomePage
     });
   }
 
@@ -155,36 +155,38 @@ public class BotController : ControllerBase {
   /// <summary>
   ///   Updates the configuration.
   /// </summary>
-  /// <param name="config">The configuration to apply for the user.</param>
+  /// <param name="configResponse">The configuration to apply for the user.</param>
   /// <param name="token">The cancellation token.</param>
   /// <returns>True if they are a mod, false otherwise.</returns>
   [HttpPost]
   [Route("config")]
-  public async Task<IActionResult> SetConfig(TwitchUserConfig config, CancellationToken token) {
+  public async Task<IActionResult> SetConfig(TwitchUserConfigResponse configResponse, CancellationToken token) {
     Claim? userIdClaim = HttpContext.User.Claims.FirstOrDefault(c => c.Type == ClaimTypes.UserData);
     if (null == userIdClaim) {
       return Unauthorized();
     }
 
     int userId = int.Parse(userIdClaim.Value);
-    Api.Model.Ddl.TwitchUserConfig? configDb =
+    TwitchUserConfig? configDb =
       await _dbContext.TwitchUserConfig.FirstOrDefaultAsync(c => c.UserId == userId, token).ConfigureAwait(false);
     if (null == configDb) {
-      await _dbContext.TwitchUserConfig.AddAsync(new Api.Model.Ddl.TwitchUserConfig {
-        BanKnownBots = config.BanKnownBots,
-        Enabled = config.IsEnabled,
+      await _dbContext.TwitchUserConfig.AddAsync(new TwitchUserConfig {
+        BanKnownBots = configResponse.BanKnownBots,
+        Enabled = configResponse.IsEnabled,
+        ShowOnHomePage = configResponse.ShowOnHomePage,
         UserId = userId,
         UpdatedOn = DateTime.UtcNow
       }, token).ConfigureAwait(false);
     }
     else {
-      configDb.Enabled = config.IsEnabled;
-      configDb.BanKnownBots = config.BanKnownBots;
+      configDb.Enabled = configResponse.IsEnabled;
+      configDb.BanKnownBots = configResponse.BanKnownBots;
+      configDb.ShowOnHomePage = configResponse.ShowOnHomePage;
       configDb.UpdatedOn = DateTime.UtcNow;
     }
 
     await _dbContext.SaveChangesAsync(token).ConfigureAwait(false);
-    return Ok(config);
+    return Ok(configResponse);
   }
 
   /// <summary>

@@ -258,7 +258,8 @@ public class MainService : BackgroundService {
   /// <param name="users">The users to add to the live table.</param>
   /// <param name="stoppingToken">The token to cancel the operation.</param>
   private async Task UpdateLiveUserTable(INullinsideContext db, ITwitchApiProxy botApi, List<User> users, CancellationToken stoppingToken) {
-    IEnumerable<Stream>? stream = await botApi.GetStreams(users.Select(u => u.TwitchId!).ToList(), token: stoppingToken).ConfigureAwait(false);
+    List<User> displayableUsers = users.Where(u => u.TwitchConfig?.ShowOnHomePage ?? false).ToList();
+    IEnumerable<Stream>? stream = await botApi.GetStreams(displayableUsers.Select(u => u.TwitchId!).ToList(), token: stoppingToken).ConfigureAwait(false);
     if (null == stream) {
       return;
     }
@@ -270,7 +271,7 @@ public class MainService : BackgroundService {
 
         List<TwitchUserLive> liveUsersDbRecords = (
             from s in stream
-            let u = users.FirstOrDefault(user => user.TwitchId == s.UserId)
+            let u = displayableUsers.FirstOrDefault(user => user.TwitchId == s.UserId)
             where u is not null
             select new TwitchUserLive {
               UserId = u.Id,
