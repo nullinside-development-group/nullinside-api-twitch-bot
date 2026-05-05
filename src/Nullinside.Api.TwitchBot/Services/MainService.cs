@@ -266,7 +266,8 @@ public class MainService : BackgroundService {
     await db.Database.CreateExecutionStrategy().ExecuteAsync(async () => {
       await using IDbContextTransaction transaction = await db.Database.BeginTransactionAsync(stoppingToken).ConfigureAwait(false);
       try {
-        await db.Database.ExecuteSqlRawAsync("TRUNCATE TABLE TwitchUserLive", stoppingToken).ConfigureAwait(false);
+        await db.TwitchUserLive.ExecuteDeleteAsync(stoppingToken).ConfigureAwait(false);
+
         List<TwitchUserLive> liveUsersDbRecords = (
             from s in stream
             let u = users.FirstOrDefault(user => user.TwitchId == s.UserId)
