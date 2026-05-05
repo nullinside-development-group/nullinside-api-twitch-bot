@@ -3,6 +3,7 @@
 using log4net;
 
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Storage;
 
 using Nullinside.Api.Common.Twitch;
 using Nullinside.Api.Common.Twitch.Json;
@@ -13,6 +14,7 @@ using Nullinside.Api.TwitchBot.Bots;
 using Nullinside.Api.TwitchBot.ChatRules;
 using Nullinside.Api.TwitchBot.Model;
 
+using Stream = TwitchLib.Api.Helix.Models.Streams.GetStreams.Stream;
 using TwitchChatMessage = Nullinside.Api.Common.Twitch.Support.TwitchChatMessage;
 using TwitchUserConfig = Nullinside.Api.Model.Ddl.TwitchUserConfig;
 
@@ -196,7 +198,9 @@ public class MainService : BackgroundService {
                 .Select(u => u.TwitchId)!).ConfigureAwait(false);
               usersWithBotEnabled = usersWithBotEnabled.Where(u => liveUsers.Contains(u.TwitchId)).ToList();
 
-              // Trim channels we aren't a mod in
+              // Trim channels we aren't a mod in. Why do we limit it to channels we are a mod in? Twitch changed
+              // its chat limits so that "verified bots" like us don't get special treatment anymore. The only thing
+              // that skips the chat limits is if it's a channel you're a mod in.
               IEnumerable<TwitchModeratedChannel> moddedChannels = await botApi.GetUserModChannels(Constants.BOT_ID).ConfigureAwait(false);
               usersWithBotEnabled = usersWithBotEnabled
                 .Where(u => moddedChannels.Select(m => m.broadcaster_id).Contains(u.TwitchId))
@@ -211,9 +215,7 @@ public class MainService : BackgroundService {
                 }
               }
 
-              // Join all the channels we're a mod in. Why do we limit it to channels we are a mod in? Twitch changed
-              // its chat limits so that "verified bots" like us don't get special treatment anymore. The only thing
-              // that skips the chat limits is if it's a channel you're a mod in.
+              // Join all the channels we've trimmed down.
               foreach (User channel in usersWithBotEnabled) {
                 if (string.IsNullOrWhiteSpace(channel.TwitchUsername)) {
                   continue;
@@ -222,6 +224,9 @@ public class MainService : BackgroundService {
                 await _client.AddMessageCallback(channel.TwitchUsername, OnTwitchMessageReceived).ConfigureAwait(false);
                 await _client.AddBannedCallback(channel.TwitchUsername, OnTwitchBanReceived).ConfigureAwait(false);
               }
+
+              // Update the database with the current state of the live users.
+              await UpdateLiveUserTable(db, botApi, usersWithBotEnabled, stoppingToken).ConfigureAwait(false);
             }
 
             // Spawn 5 workers to process all the live user's channels.
@@ -243,6 +248,50 @@ public class MainService : BackgroundService {
     catch (Exception ex) {
       _log.Error("Main Inner failed", ex);
     }
+  }
+
+  /// <summary>
+  ///   Update the list of users that are currently live.
+  /// </summary>
+  /// <param name="db">The database context.</param>
+  /// <param name="botApi">The twitch api.</param>
+  /// <param name="users">The users to add to the live table.</param>
+  /// <param name="stoppingToken">The token to cancel the operation.</param>
+  private async Task UpdateLiveUserTable(INullinsideContext db, ITwitchApiProxy botApi, List<User> users, CancellationToken stoppingToken) {
+    IEnumerable<Stream>? stream = await botApi.GetStreams(users.Select(u => u.TwitchId!).ToList(), token: stoppingToken).ConfigureAwait(false);
+    if (null == stream) {
+      return;
+    }
+
+    await db.Database.CreateExecutionStrategy().ExecuteAsync(async () => {
+      await using IDbContextTransaction transaction = await db.Database.BeginTransactionAsync(stoppingToken).ConfigureAwait(false);
+      try {
+        await db.Database.ExecuteSqlRawAsync("TRUNCATE TABLE TwitchUserLive", stoppingToken).ConfigureAwait(false);
+        List<TwitchUserLive> liveUsersDbRecords = (
+            from s in stream
+            let u = users.FirstOrDefault(user => user.TwitchId == s.UserId)
+            where u is not null
+            select new TwitchUserLive {
+              UserId = u.Id,
+              ViewerCount = s.ViewerCount,
+              GoneLiveTime = s.StartedAt,
+              StreamTitle = s.Title,
+              GameName = s.GameName,
+              ThumbnailUrl = s.ThumbnailUrl
+            }
+          )
+          .ToList();
+
+        await db.TwitchUserLive.AddRangeAsync(liveUsersDbRecords, stoppingToken).ConfigureAwait(false);
+        await db.SaveChangesAsync(stoppingToken).ConfigureAwait(false);
+        await transaction.CommitAsync(stoppingToken).ConfigureAwait(false);
+      }
+      catch (Exception ex) {
+        await transaction.RollbackAsync(stoppingToken).ConfigureAwait(false);
+        _log.Error("Failed to update live users table", ex);
+        throw;
+      }
+    }).ConfigureAwait(false);
   }
 
   /// <summary>
