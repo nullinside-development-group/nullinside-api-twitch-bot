@@ -203,4 +203,26 @@ public class BotController : ControllerBase {
 
     return Ok(currentlyLive.Select(u => new TwitchLiveUsersResponse(u)).ToList());
   }
+
+  /// <summary>
+  ///   Retrieves the list of recently banned bot accounts.
+  /// </summary>
+  [AllowAnonymous]
+  [HttpGet("bans")]
+  [ProducesResponseType(StatusCodes.Status200OK)]
+  public async Task<ObjectResult> GetRecentlyBannedBots(CancellationToken token = new()) {
+    var usernameMapping = await (
+        from u in _dbContext.TwitchUser
+        join b in _dbContext.TwitchBan
+            .OrderByDescending(x => x.Timestamp)
+            .Take(100)
+          on u.TwitchId equals b.BannedUserTwitchId
+        select new { u.TwitchUsername, b.Timestamp }
+      )
+      .Distinct()
+      .ToListAsync(token)
+      .ConfigureAwait(false);
+
+    return Ok(usernameMapping.Select(x => new TwitchRecentBotsResponse(x.TwitchUsername!, x.Timestamp)).ToList());
+  }
 }
