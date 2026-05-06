@@ -19,6 +19,7 @@ public abstract class AChatRuleUnitTestBase<T> : UnitTestBase where T : AChatRul
   /// <param name="goodString">A friendly string with no issues.</param>
   [Test]
   [TestCase("Hello I love candy and sprinkles")]
+  [TestCase("silver870Silvietwerkin silver870Silvietwerkin silver870Silvietwerkin silver870Silvietwerkin silver870Silvietwerkin silver870Silvietwerkin silver870Silvietwerkin")]
   public async Task TestItDoesntAlwaysFail(string goodString) {
     var rule = new T();
     var botProxy = new Mock<ITwitchApiProxy>();

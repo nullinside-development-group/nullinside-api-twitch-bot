@@ -29,8 +29,8 @@ public class BestCheapViewers : AChatRule {
     "boosting channels",
     "streaming into the void",
     "get new real viewers",
-    "viewers",
     "top viewers",
+    "viewers *",
     "specialize in promoting twitch channels",
     "stream viewers"
   ];
@@ -48,7 +48,7 @@ public class BestCheapViewers : AChatRule {
     }
 
     // The number of spaces per message may chance, so normalize that and lowercase it for comparison.
-    string normalized = string.Join(' ', message.Message.Split(" ").Where(s => !string.IsNullOrWhiteSpace(s)))
+    string normalized = string.Join(' ', message.Message.Trim().Split(" ").Where(s => !string.IsNullOrWhiteSpace(s)))
       .ToLowerInvariant();
 
     // Messages will be one of two variations with random special characters mixed in. Some of those special characters
@@ -63,7 +63,7 @@ public class BestCheapViewers : AChatRule {
           if (start + i + offset < normalized.Length && normalized[start + i + offset] == expected[i]) {
             ++matches;
           }
-          // If this is an accent mark then the next character should match and the whole string we're evalutating
+          // If this is an accent mark then the next character should match and the whole string we're evaluating
           // will be off by 1 more position.
           else if (start + i + offset + 1 < normalized.Length && normalized[start + i + offset + 1] == expected[i]) {
             ++matches;
