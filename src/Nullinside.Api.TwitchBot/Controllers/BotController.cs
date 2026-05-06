@@ -1,4 +1,5 @@
 using System.Security.Claims;
+using System.Text.RegularExpressions;
 
 using log4net;
 
@@ -35,6 +36,12 @@ public class BotController : ControllerBase {
   ///   The logger.
   /// </summary>
   private readonly ILog _log = LogManager.GetLogger(typeof(BotController));
+
+  /// <summary>
+  ///   Regex to find username @ mentions in the chat logs.
+  /// </summary>
+  /// <remarks>@ followed by non-whitespace characters</remarks>
+  private readonly Regex usernameMentions = new(@"@\S+", RegexOptions.Compiled);
 
   /// <summary>
   ///   Initializes a new instance of the <see cref="LoginController" /> class.
@@ -211,18 +218,33 @@ public class BotController : ControllerBase {
   [HttpGet("bans")]
   [ProducesResponseType(StatusCodes.Status200OK)]
   public async Task<ObjectResult> GetRecentlyBannedBots(CancellationToken token = new()) {
-    var usernameMapping = await (
+    var recentBans = await (
         from u in _dbContext.TwitchUser
         join b in _dbContext.TwitchBan
-            .OrderByDescending(x => x.Timestamp)
-            .Take(100)
           on u.TwitchId equals b.BannedUserTwitchId
-        select new { u.TwitchUsername, b.Timestamp }
+        join c in _dbContext.TwitchUserChatLogs
+          on u.TwitchId equals c.TwitchId into chatGroup
+        orderby b.Timestamp descending
+        select new {
+          u.TwitchUsername,
+          b.Timestamp,
+          ChatLogs = chatGroup.OrderByDescending(c => c.Timestamp).ToList()
+        }
       )
-      .Distinct()
+      .Take(50)
       .ToListAsync(token)
       .ConfigureAwait(false);
 
-    return Ok(usernameMapping.Select(x => new TwitchRecentBotsResponse(x.TwitchUsername!, x.Timestamp)).ToList());
+    foreach (var bannedUser in recentBans) {
+      foreach (TwitchUserChatLogs? chatLog in bannedUser.ChatLogs) {
+        if (string.IsNullOrWhiteSpace(chatLog.Message)) {
+          continue;
+        }
+
+        chatLog.Message = usernameMentions.Replace(chatLog.Message, "****");
+      }
+    }
+
+    return Ok(recentBans.Select(x => new TwitchRecentBotsResponse(x.TwitchUsername!, x.Timestamp, x.ChatLogs)).ToList());
   }
 }
