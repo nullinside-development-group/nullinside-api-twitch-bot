@@ -3,16 +3,16 @@ using Nullinside.Api.Model.Ddl;
 namespace Nullinside.Api.TwitchBot.Model;
 
 /// <summary>
-///   A response with information about live Twitch streams.
+///   A response with information about a bot ban, identifying only the user and their actions.
 /// </summary>
-public class TwitchRecentBotsResponse {
+public class TwitchRecentBansResponse {
   /// <summary>
-  ///   Initializes a new instance of the <see cref="TwitchRecentBotsResponse" /> class.
+  ///   Initializes a new instance of the <see cref="TwitchRecentBansResponse" /> class.
   /// </summary>
   /// <param name="twitchUsername">The username of the account.</param>
   /// <param name="timestamp">The timestamp of the ban.</param>
   /// <param name="chatLogs">The logs of the chat, if available.</param>
-  public TwitchRecentBotsResponse(string twitchUsername, DateTime timestamp, IEnumerable<TwitchUserChatLogs>? chatLogs) {
+  public TwitchRecentBansResponse(string twitchUsername, DateTime timestamp, IEnumerable<TwitchUserChatLogs>? chatLogs) {
     TwitchUsername = twitchUsername;
     Timestamp = timestamp;
     ChatLogs = chatLogs?.Select(c => new TwitchChatLog(c)).ToList();

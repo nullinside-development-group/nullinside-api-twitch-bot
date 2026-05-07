@@ -7,6 +7,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 
+using Nullinside.Api.Common;
 using Nullinside.Api.Common.Twitch;
 using Nullinside.Api.Model;
 using Nullinside.Api.Model.Ddl;
@@ -212,7 +213,7 @@ public class BotController : ControllerBase {
   }
 
   /// <summary>
-  ///   Retrieves the list of recently banned bot accounts.
+  ///   Retrieves the list of 25 recently banned bot accounts.
   /// </summary>
   [AllowAnonymous]
   [HttpGet("bans")]
@@ -231,7 +232,7 @@ public class BotController : ControllerBase {
           ChatLogs = chatGroup.OrderByDescending(c => c.Timestamp).ToList()
         }
       )
-      .Take(50)
+      .Take(25)
       .ToListAsync(token)
       .ConfigureAwait(false);
 
@@ -245,6 +246,112 @@ public class BotController : ControllerBase {
       }
     }
 
-    return Ok(recentBans.Select(x => new TwitchRecentBotsResponse(x.TwitchUsername!, x.Timestamp, x.ChatLogs)).ToList());
+    return Ok(recentBans.Select(x => new TwitchRecentBansResponse(x.TwitchUsername!, x.Timestamp, x.ChatLogs)).ToList());
+  }
+
+  /// <summary>
+  ///   Gets all chat logs from the database.
+  /// </summary>
+  [Authorize(nameof(UserRoles.ADMIN))]
+  [HttpGet("chat/admin")]
+  [ProducesResponseType(StatusCodes.Status200OK)]
+  public async Task<ObjectResult> GetAllChatLogs(int page = 1, int pageSize = 100, CancellationToken token = new()) {
+    int totalCount = await _dbContext.TwitchUserChatLogs.CountAsync(token).ConfigureAwait(false);
+    List<TwitchUserChatLogs> logs = await _dbContext.TwitchUserChatLogs
+      .OrderByDescending(c => c.Timestamp)
+      .Skip((page - 1) * pageSize)
+      .Take(pageSize)
+      .ToListAsync(token)
+      .ConfigureAwait(false);
+
+    return Ok(new PagedResponse<TwitchChatLogResponse> {
+      Data = logs.Select(l => new TwitchChatLogResponse(l)).ToList(),
+      TotalCount = totalCount,
+      Page = page,
+      PageSize = pageSize
+    });
+  }
+
+  /// <summary>
+  ///   Gets all banned accounts across all channels with additional information.
+  /// </summary>
+  [Authorize(nameof(UserRoles.ADMIN))]
+  [HttpGet("bans/admin")]
+  [ProducesResponseType(StatusCodes.Status200OK)]
+  public async Task<ObjectResult> GetAllBans(int page = 1, int pageSize = 20, CancellationToken token = new()) {
+    int totalCount = await _dbContext.TwitchBan
+      .CountAsync(token)
+      .ConfigureAwait(false);
+
+    var recentBans = await (
+        from u in _dbContext.TwitchUser
+        join b in _dbContext.TwitchBan
+          on u.TwitchId equals b.BannedUserTwitchId
+        join c in _dbContext.TwitchUserChatLogs
+          on u.TwitchId equals c.TwitchId into chatGroup
+        orderby b.Timestamp descending
+        select new {
+          u.TwitchId,
+          u.TwitchUsername,
+          b.Timestamp,
+
+          Channels = chatGroup
+            .GroupBy(x => x.Channel)
+            .Select(g => new {
+              Channel = g.Key,
+              ChannelId = (from channelUser in _dbContext.Users
+                where channelUser.TwitchUsername == g.Key
+                select channelUser.TwitchId).FirstOrDefault(),
+
+              Messages = g
+                .OrderByDescending(x => x.Timestamp)
+                .Select(x => new {
+                  x.Message,
+                  x.Timestamp
+                })
+                .ToList()
+            })
+            .ToList()
+        }
+      )
+      .Skip((page - 1) * pageSize)
+      .Take(pageSize)
+      .ToListAsync(token)
+      .ConfigureAwait(false);
+
+    return Ok(new PagedResponse<TwitchBanResponse> {
+      Data = recentBans.Select(ban => new TwitchBanResponse(
+        ban.TwitchUsername ?? string.Empty,
+        ban.Timestamp,
+        ban.Channels?.SelectMany(ch =>
+          ch.Messages?.Select(m => new TwitchUserChatLogs {
+            Channel = ch.Channel,
+            TwitchId = ch.ChannelId,
+            Message = m.Message,
+            Timestamp = m.Timestamp
+          }) ?? Enumerable.Empty<TwitchUserChatLogs>()
+        )
+      ) {
+        TwitchId = ban.TwitchId
+      }).ToList(),
+      TotalCount = totalCount,
+      Page = page,
+      PageSize = pageSize
+    });
+  }
+
+  /// <summary>
+  ///   Gets the list of accounts with only a few messages that were banned by someone other than us.
+  /// </summary>
+  [Authorize(nameof(UserRoles.ADMIN))]
+  [HttpGet("bans/audit")]
+  [ProducesResponseType(StatusCodes.Status200OK)]
+  public async Task<ObjectResult> GetBansNotFromUs(CancellationToken token = new()) {
+    List<BansWithMessagesInChat> bans = await _dbContext.BansWithMessagesInChat
+      .OrderByDescending(b => b.Timestamp)
+      .ToListAsync(token)
+      .ConfigureAwait(false);
+
+    return Ok(bans);
   }
 }
