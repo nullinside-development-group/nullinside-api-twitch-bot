@@ -37,7 +37,9 @@ public class BestCheapViewers : AChatRule {
     "specialize in promoting twitch channels",
     "stream viewers",
     "real viewers",
-    "viewers stream"
+    "viewers stream",
+    "ai viewer",
+    "ai follower"
   ];
 
   /// <inheritdoc />
