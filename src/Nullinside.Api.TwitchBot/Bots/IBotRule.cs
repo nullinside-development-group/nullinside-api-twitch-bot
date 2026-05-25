@@ -13,7 +13,7 @@ public interface IBotRule {
   /// </summary>
   /// <param name="config">The user's configuration.</param>
   /// <returns>True if it should run, false otherwise.</returns>
-  public bool ShouldRun(TwitchUserConfig config);
+  bool ShouldRun(TwitchUserConfig config);
 
   /// <summary>
   ///   Performs the bot banning logic for the rule.
@@ -25,6 +25,6 @@ public interface IBotRule {
   /// <param name="db">The database.</param>
   /// <param name="stoppingToken">The cancellation token.</param>
   /// <returns>An asynchronous task.</returns>
-  public Task Handle(User user, TwitchUserConfig config, ITwitchApiProxy botProxy,
+  Task Handle(User user, TwitchUserConfig config, ITwitchApiProxy botProxy,
     INullinsideContext db, CancellationToken stoppingToken = new());
 }

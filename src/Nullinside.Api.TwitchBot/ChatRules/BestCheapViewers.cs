@@ -1,4 +1,5 @@
-﻿using Nullinside.Api.Common.Twitch;
+﻿using Nullinside.Api.Common.Extensions;
+using Nullinside.Api.Common.Twitch;
 using Nullinside.Api.Model;
 using Nullinside.Api.TwitchBot.Model;
 
@@ -14,6 +15,7 @@ public class BestCheapViewers : AChatRule {
   ///   The strings that we expect to receive if this is a bot.
   /// </summary>
   public readonly string[] Expected = [
+    "best followers",
     "best viewers on",
     "cheap viewers on",
     "cheap folloewrs on",
@@ -31,8 +33,11 @@ public class BestCheapViewers : AChatRule {
     "get new real viewers",
     "top viewers",
     "viewers *",
+    "viewers smm",
     "specialize in promoting twitch channels",
-    "stream viewers"
+    "stream viewers",
+    "real viewers",
+    "viewers stream"
   ];
 
   /// <inheritdoc />
@@ -48,37 +53,15 @@ public class BestCheapViewers : AChatRule {
     }
 
     // The number of spaces per message may chance, so normalize that and lowercase it for comparison.
-    string normalized = string.Join(' ', message.Message.Trim().Split(" ").Where(s => !string.IsNullOrWhiteSpace(s)))
+    string normalized = string.Join(' ', message.Message.NormalizeToAscii().Trim().Split(" ").Where(s => !string.IsNullOrWhiteSpace(s)))
       .ToLowerInvariant();
 
-    // Messages will be one of two variations with random special characters mixed in. Some of those special characters
-    // will be accent marks. When we receive an accent mark it'll take the position of a real character, hence why we
-    // need an offset applied only to the incoming string.
     foreach (string expected in Expected) {
-      for (int start = 0; start <= normalized.Length - expected.Length; start++) {
-        int matches = 0;
-        int offset = 0;
-        for (int i = 0; i < expected.Length; i++) {
-          // If this is a normal character it should be in the correct position.
-          if (start + i + offset < normalized.Length && normalized[start + i + offset] == expected[i]) {
-            ++matches;
-          }
-          // If this is an accent mark then the next character should match and the whole string we're evaluating
-          // will be off by 1 more position.
-          else if (start + i + offset + 1 < normalized.Length && normalized[start + i + offset + 1] == expected[i]) {
-            ++matches;
-            ++offset;
-          }
-        }
-
-        // If everything matches except 3 characters, take it. We will assume the 3 characters are "special" characters
-        // used to confuse us.
-        if (matches > expected.Length - 3) {
-          (string UserId, string Username)[] users = new[] { (message.UserId, message.Username) };
-          await BanAndLog(channelId, botProxy, users, "[Bot] Spam (Best Cheap Viewers)", db, stoppingToken)
-            .ConfigureAwait(false);
-          return false;
-        }
+      if (normalized.Contains(expected, StringComparison.InvariantCultureIgnoreCase)) {
+        (string UserId, string Username)[] users = new[] { (message.UserId, message.Username) };
+        await BanAndLog(channelId, botProxy, users, "[Bot] Spam (Best Cheap Viewers)", db, stoppingToken)
+          .ConfigureAwait(false);
+        return false;
       }
     }
 

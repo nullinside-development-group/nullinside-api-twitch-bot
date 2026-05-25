@@ -18,9 +18,9 @@ public static class Constants {
   ///   The twitch id for the bot account.
   /// </summary>
   public const string BOT_ID = "640082552";
-  
+
   /// <summary>
-  /// The amount of time a token is valid for.
+  ///   The amount of time a token is valid for.
   /// </summary>
   public static readonly TimeSpan OAUTH_TOKEN_TIME_LIMIT = TimeSpan.FromHours(1);
 

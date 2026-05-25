@@ -8,6 +8,7 @@ using Microsoft.AspNetCore.Mvc;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Serialization;
 
+using Nullinside.Api.Common.Auth;
 using Nullinside.Api.Common.Twitch;
 using Nullinside.Api.Common.Twitch.Support;
 using Nullinside.Api.Model;
@@ -80,7 +81,7 @@ public class LoginController : ControllerBase {
       return Redirect($"{siteUrl}/twitch/bot/config?error={TwitchBotLoginErrors.INTERNAL_ERROR}");
     }
 
-    var bearerToken = await UserHelpers.GenerateTokenAndSaveToDatabase(_dbContext, email, Constants.OAUTH_TOKEN_TIME_LIMIT, api.OAuth?.AccessToken,
+    OAuthToken? bearerToken = await UserHelpers.GenerateTokenAndSaveToDatabase(_dbContext, email, Constants.OAUTH_TOKEN_TIME_LIMIT, api.OAuth?.AccessToken,
       api.OAuth?.RefreshToken, api.OAuth?.ExpiresUtc, user.Login, user.Id, token).ConfigureAwait(false);
     if (null == bearerToken) {
       return Redirect($"{siteUrl}/twitch/bot/config?error={TwitchBotLoginErrors.INTERNAL_ERROR}");

@@ -1,4 +1,7 @@
-﻿using Nullinside.Api.Common.Twitch;
+﻿using System.Text.RegularExpressions;
+
+using Nullinside.Api.Common.Extensions;
+using Nullinside.Api.Common.Twitch;
 using Nullinside.Api.Model;
 using Nullinside.Api.TwitchBot.Model;
 
@@ -19,11 +22,10 @@ public class Streamboo : AChatRule {
   public override async Task<bool> Handle(string channelId, ITwitchApiProxy botProxy, TwitchChatMessage message,
     INullinsideContext db, CancellationToken stoppingToken = new()) {
     // The number of spaces per message may chance, so normalize that and lowercase it for comparison.
-    string normalized = string.Concat(message.Message.Split(" ").Where(s => !string.IsNullOrWhiteSpace(s)))
-      .ToLowerInvariant();
+    string normalized = message.Message.NormalizeToAscii().ToLowerInvariant();
 
     // Message will start with any of these variations.
-    if (message.IsFirstMessage && normalized.Contains("streamboo")) {
+    if (message.IsFirstMessage && Regex.IsMatch(normalized, @"s+\s*t+\s*r+\s*e+\s*a+\s*m+\s*b+\s*o+\s*o+", RegexOptions.IgnoreCase)) {
       await BanAndLog(channelId, botProxy, new[] { (message.UserId, message.Username) },
         "[Bot] Spam (Streamboo)", db, stoppingToken).ConfigureAwait(false);
       return false;

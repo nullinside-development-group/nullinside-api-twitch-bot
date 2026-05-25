@@ -151,7 +151,7 @@ public static class NullinsideContextExtensions {
       throw new Exception("No bot user in database");
     }
 
-    return await ConfigureApiAndRefreshToken(db, botUser, api, stoppingToken).ConfigureAwait(false);
+    return await db.ConfigureApiAndRefreshToken(botUser, api, stoppingToken).ConfigureAwait(false);
   }
 
   /// <summary>

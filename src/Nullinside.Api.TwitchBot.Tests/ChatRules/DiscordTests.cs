@@ -46,6 +46,22 @@ public class DiscordTests : AChatRuleUnitTestBase<Discord> {
   [TestCase("What's up Friend, great stream! I'm having a blast watching you stream. Let's move the conversation to Discord, where we can discuss more about streaming in more detail and get to know each other better. See you there! My discord username is 👉john_6029")]
   [TestCase("\"Love your streams! Let's connect on Discord (ice_0147) and build a community! I'd love to support you as a fan & friend!\"")]
   [TestCase("“Hello I  Love your streams, they’re amazing! Let’s connect on Discord (ayome_01) and grow a community. I’d love to support you as a fan and friend!”")]
+  [TestCase("Big fan of the game just follow. Do you have a DC where I can keep up with the stream as fellow streamer... my DC is optify823 let's connect")]
+  [TestCase("Discord: jeff_monet")]
+  [TestCase("Good gaming mate let's game add.   discord      novarift975")]
+  [TestCase("Hey buddy I really love your stream so I give you a follow I'd love to be a friend and fan if you don't mind Add me on Dis       cord: robinson_022")]
+  [TestCase("Hey buddy i really love your stream so i give you a follow I'd love to be a friend and fan if you don't mind Add me On Dis     cord:                robinson_022")]
+  [TestCase("Hit me up discord:        martin_2a")]
+  [TestCase("Hit mé up on Disc 0rd: milcky55")]
+  [TestCase("I'd like to connect for more watch, @dd on Dls cord:  muzegy")]
+  [TestCase("I’m busy at the moment, but once I settle, I will love to play with you . Add me on Dis c0rd   imole_34")]
+  [TestCase("Let's play, hit me up on Disrd                    dmx_4")]
+  [TestCase("Love your streams hope to catch you live next time you stream,        add me on Dis.cord:         hypewave10")]
+  [TestCase("Mind connecting with me on dis-cord.      crownjoy2")]
+  [TestCase("Mind connecting with me onDis. cord david_840")]
+  [TestCase("Yo, you’re killin’ it out here! 🔥 Mad respect for your style. I’m building my own stream too. I’m elda002 on Dis-cord!")]
+  [TestCase("Yo, you’re killin’ it out here! 🔥 Mad respect for your style. I’m building my own stream too. I’m elda002 on Disc0rd")]
+  [TestCase("Yoo man I really love this game would you love to squad up to game soon.   Discord me  👉 mrstweaks")]
   public async Task TestKnownStrings(string badString) {
     var rule = new Discord();
     var botProxy = new Mock<ITwitchApiProxy>();

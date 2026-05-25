@@ -15,10 +15,13 @@ public class StreambooTests : AChatRuleUnitTestBase<Dogehype> {
   /// </summary>
   /// <param name="badString">The string that should fail.</param>
   [Test]
+  [TestCase("Ai Viewe𝗿𝘀 𝗌𝗍𝗋ea𝗆𝖻𝗈𝗈 . ᴄᴏᴍ")]
   [TestCase("streamboo .com ( remove the space )  @anohXiot")]
   [TestCase("streamboo .com ( remove the space )  @C2apJWT9")]
   [TestCase("streamboo .com ( remove the space )  @NpFQHupB")]
   [TestCase("streamboo .com ( remove the space )  @tGYF1O11")]
+  [TestCase("Viewe𝗿𝘀 sᴛʀᴇᴀᴍʙᴏᴏ .ᴄᴏᴍ")]
+  [TestCase("𝗩𝗶𝗲𝘄𝗲𝗿𝘀 s t r e a m b o o . c o m")]
   public async Task TestKnownStrings(string badString) {
     var rule = new Streamboo();
     var botProxy = new Mock<ITwitchApiProxy>();

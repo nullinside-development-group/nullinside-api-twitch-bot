@@ -1,13 +1,13 @@
 using System.Diagnostics.CodeAnalysis;
 
-using TwitchLib.Client.Models;
-
 namespace Nullinside.Api.TwitchBot.Model;
 
 /// <summary>
-///   This wrapper exists for unit testing purposes. It's nice passing the <see cref="TwitchChatMessage" /> around only because
+///   This wrapper exists for unit testing purposes. It's nice passing the <see cref="TwitchChatMessage" /> around only
+///   because
 ///   it promotes discoverability with what chat messages can possess. However, we can't construct a
-///   <see cref="TwitchChatMessage" /> easily in the unit tests and thus we need a wrapper that we can mess with that may or may
+///   <see cref="TwitchChatMessage" /> easily in the unit tests and thus we need a wrapper that we can mess with that may
+///   or may
 ///   not have a source.
 /// </summary>
 [ExcludeFromCodeCoverage]
