@@ -10,7 +10,8 @@ using Nullinside.Api.Model.Ddl;
 using Nullinside.Api.TwitchBot.Model;
 
 using TwitchLib.Api.Core.Exceptions;
-using TwitchLib.Client.Models;
+
+using TwitchChatMessage = Nullinside.Api.Common.Twitch.Support.TwitchChatMessage;
 
 namespace Nullinside.Api.TwitchBot.ChatRules;
 
@@ -46,7 +47,7 @@ public class TwitchChatMessageMonitorConsumer : IDisposable {
   /// <summary>
   ///   The non-priority queue to scan messages from.
   /// </summary>
-  private readonly BlockingCollection<Common.Twitch.Support.TwitchChatMessage> _queue;
+  private readonly BlockingCollection<TwitchChatMessage> _queue;
 
   /// <summary>
   ///   The thread responsible for scanning channels for bots.
@@ -64,7 +65,7 @@ public class TwitchChatMessageMonitorConsumer : IDisposable {
   /// <param name="db">The database.</param>
   /// <param name="api">The twitch api.</param>
   /// <param name="queue">The non-priority queue to scan messages from.</param>
-  public TwitchChatMessageMonitorConsumer(INullinsideContext db, ITwitchApiProxy api, BlockingCollection<Common.Twitch.Support.TwitchChatMessage> queue) {
+  public TwitchChatMessageMonitorConsumer(INullinsideContext db, ITwitchApiProxy api, BlockingCollection<TwitchChatMessage> queue) {
     _db = db;
     _queue = queue;
     _api = api;
@@ -107,7 +108,7 @@ public class TwitchChatMessageMonitorConsumer : IDisposable {
     while (!_poisonPill) {
       try {
         // Try to get a message from one of the two queues.
-        Common.Twitch.Support.TwitchChatMessage? message;
+        TwitchChatMessage? message;
         _queue.TryTake(out message);
 
         // If we didn't get a message, loop.
@@ -154,7 +155,7 @@ public class TwitchChatMessageMonitorConsumer : IDisposable {
           foreach (IChatRule rule in rules) {
             try {
               if (rule.ShouldRun(user.TwitchConfig)) {
-                if (!await rule.Handle(user.TwitchId, botProxy, new TwitchChatMessage(message), _db).ConfigureAwait(false)) {
+                if (!await rule.Handle(user.TwitchId, botProxy, new Model.TwitchChatMessage(message), _db).ConfigureAwait(false)) {
                   break;
                 }
               }

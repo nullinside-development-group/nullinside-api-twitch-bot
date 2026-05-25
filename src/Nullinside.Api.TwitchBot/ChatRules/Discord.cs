@@ -1,4 +1,5 @@
-﻿using Nullinside.Api.Common.Twitch;
+﻿using Nullinside.Api.Common.Extensions;
+using Nullinside.Api.Common.Twitch;
 using Nullinside.Api.Model;
 using Nullinside.Api.TwitchBot.Model;
 
@@ -11,6 +12,8 @@ namespace Nullinside.Api.TwitchBot.ChatRules;
 /// </summary>
 public class Discord : AChatRule {
   private readonly string[] _knownPhrases = [
+    "discord:",
+    "my dc is",
     "add me",
     "add my",
     "add up",
@@ -25,6 +28,7 @@ public class Discord : AChatRule {
     "hit me up",
     "d1sc0rd",
     "dis cord",
+    "add. discord",
     "add me on discord",
     "add me on dis cord",
     "add him on discord",
@@ -35,7 +39,11 @@ public class Discord : AChatRule {
     "hit him up on discord",
     "add me on discord",
     "add me on dis-cord",
-    "dis cord"
+    "dis. cord",
+    "disc0rd",
+    "dls cord",
+    "dis-cord",
+    "discord me"
   ];
 
   /// <inheritdoc />
@@ -51,12 +59,8 @@ public class Discord : AChatRule {
     }
 
     // The number of spaces per message may chance, so normalize that and lowercase it for comparison.
-    string normalized = string.Join(' ', message.Message.Split(" ").Where(s => !string.IsNullOrWhiteSpace(s)))
+    string normalized = string.Join(' ', message.Message.NormalizeToAscii().Split(" ").Where(s => !string.IsNullOrWhiteSpace(s)))
       .ToLowerInvariant();
-
-    if (!normalized.Contains("discord", StringComparison.InvariantCultureIgnoreCase)) {
-      return true;
-    }
 
     foreach (string phrase in _knownPhrases) {
       if (normalized.Contains(phrase, StringComparison.InvariantCultureIgnoreCase)) {

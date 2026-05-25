@@ -125,6 +125,7 @@ public class BestCheapViewersTests : AChatRuleUnitTestBase<BestCheapViewers> {
   [TestCase("Bestͮ vie͐wers ̷on cutt.ly/EeK6Anda")]
   [TestCase("Bestͮ vie͐wers ̷on viewerszone.online")]
   [TestCase("Best viěw\u0310e\u0329rs \u0333o\u032bno\u034en streamboo .com ( remove the space )  @WSZ7tPNI")]
+  [TestCase("Toр Viеwеrs streamviеwеrs .org @miss_nayita")]
   public async Task TestKnownStrings(string badString) {
     var rule = new BestCheapViewers();
     var botProxy = new Mock<ITwitchApiProxy>();

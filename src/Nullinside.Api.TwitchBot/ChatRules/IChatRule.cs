@@ -15,7 +15,7 @@ public interface IChatRule {
   /// </summary>
   /// <param name="config">The user's configuration.</param>
   /// <returns>True if it should run, false otherwise.</returns>
-  public bool ShouldRun(TwitchUserConfig config);
+  bool ShouldRun(TwitchUserConfig config);
 
   /// <summary>
   ///   Performs the bot banning logic for the rule.
@@ -27,6 +27,6 @@ public interface IChatRule {
   /// <param name="db">The database.</param>
   /// <param name="stoppingToken">The cancellation token.</param>
   /// <returns>An asynchronous task.</returns>
-  public Task<bool> Handle(string channelId, ITwitchApiProxy botProxy, TwitchChatMessage message, INullinsideContext db,
+  Task<bool> Handle(string channelId, ITwitchApiProxy botProxy, TwitchChatMessage message, INullinsideContext db,
     CancellationToken stoppingToken = new());
 }
