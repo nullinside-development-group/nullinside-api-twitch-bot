@@ -319,7 +319,7 @@ public class MainService : BackgroundService {
         TwitchId = m.UserId,
         TwitchUsername = m.Username,
         Message = m.Message,
-        Timestamp = DateTime.UtcNow // TODO: Convert the tmi-ts to a datetime.
+        Timestamp = m.Timestamp
       }));
 
       _receivedMessages.Clear();

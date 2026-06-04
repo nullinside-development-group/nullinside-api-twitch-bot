@@ -35,7 +35,7 @@ ILoggerFactory loggerFactory = LoggerFactory.Create(c => c
     .AddConsole()
   //    .SetMinimumLevel(LogLevel.Trace) // uncomment to view raw messages received from twitch
 );
-builder.Services.AddSingleton<ITwitchClientProxy, TwitchClientProxy>();
+builder.Services.AddSingleton<ITwitchClientProxy, CustomTwitchClientProxy>();
 builder.Services.AddHostedService<MainService>();
 builder.Services.AddAuthentication()
   .AddScheme<AuthenticationSchemeOptions, BasicAuthenticationHandler>("Bearer", _ => { });
