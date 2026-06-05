@@ -30,13 +30,13 @@ public class BotControllerTests : UnitTestBase {
         TwitchId = "user1",
         Message = $"Message {i}",
         Timestamp = DateTime.UtcNow.AddMinutes(i)
-      });
+      }).ConfigureAwait(false);
     }
 
-    await _db.SaveChangesAsync();
+    await _db.SaveChangesAsync().ConfigureAwait(false);
 
     // Act
-    ObjectResult result = await _controller.GetAllChatLogs(2, 5);
+    ObjectResult result = await _controller.GetAllChatLogs(2, 5).ConfigureAwait(false);
 
     // Assert
     Assert.IsInstanceOf<OkObjectResult>(result);

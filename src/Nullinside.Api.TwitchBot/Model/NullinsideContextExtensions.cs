@@ -6,11 +6,11 @@ using log4net;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Storage;
 
-using Nullinside.Api.Common;
 using Nullinside.Api.Common.Auth;
 using Nullinside.Api.Common.Twitch;
 using Nullinside.Api.Model;
 using Nullinside.Api.Model.Ddl;
+using Nullinside.Api.Model.Shared;
 
 namespace Nullinside.Api.TwitchBot.Model;
 
