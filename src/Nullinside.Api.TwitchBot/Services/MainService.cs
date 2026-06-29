@@ -6,7 +6,6 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Storage;
 
 using Nullinside.Api.Common.Twitch;
-using Nullinside.Api.Common.Twitch.Json;
 using Nullinside.Api.Common.Twitch.Support;
 using Nullinside.Api.Model;
 using Nullinside.Api.Model.Ddl;
@@ -193,28 +192,31 @@ public class MainService : BackgroundService {
               _client.TwitchOAuthToken = botApi.OAuth?.AccessToken;
 
               // Trim channels that aren't live
-              IEnumerable<string> liveUsers = await botApi.GetChannelsLive(usersWithBotEnabled
-                .Where(u => null != u.TwitchId)
-                .Select(u => u.TwitchId)!).ConfigureAwait(false);
-              usersWithBotEnabled = usersWithBotEnabled.Where(u => liveUsers.Contains(u.TwitchId)).ToList();
+              List<TwitchUserInfo> liveUsers = (await botApi.GetChannelsLive(usersWithBotEnabled
+                    .Where(u => null != u.TwitchId)
+                    .Select(u => u.TwitchId)!)
+                  .ConfigureAwait(false))
+                .ToList();
+              List<string> liveUserIds = liveUsers.Select(l => l.Id).ToList();
+              usersWithBotEnabled = usersWithBotEnabled.Where(u => liveUserIds.Contains(u.TwitchId ?? "")).ToList();
+
+              // If any channels have a different name now, lets update our copy in the database.
+              foreach (TwitchUserInfo liveUser in liveUsers) {
+                User? user = db.Users.FirstOrDefault(u => u.TwitchId == liveUser.Id);
+                if (null != user && user.TwitchUsername != liveUser.Username) {
+                  user.TwitchUsername = liveUser.Username;
+                  await db.SaveChangesAsync(stoppingToken).ConfigureAwait(false);
+                }
+              }
 
               // Trim channels we aren't a mod in. Why do we limit it to channels we are a mod in? Twitch changed
               // its chat limits so that "verified bots" like us don't get special treatment anymore. The only thing
               // that skips the chat limits is if it's a channel you're a mod in.
-              IEnumerable<TwitchModeratedChannel> moddedChannels = await botApi.GetUserModChannels(Constants.BOT_ID).ConfigureAwait(false);
+              // IEnumerable<TwitchModeratedChannel> moddedChannels = await botApi.GetUserModChannels(Constants.BOT_ID).ConfigureAwait(false);
               // TODO: When the twitch api is fixed we can re-enable this code. Currently there is a bug where twitch doesn't return all mod channels.
               // usersWithBotEnabled = usersWithBotEnabled
               //   .Where(u => moddedChannels.Select(m => m.broadcaster_id).Contains(u.TwitchId))
               //   .ToList();
-
-              // If any channels have a different name now, lets update our copy in the database.
-              foreach (TwitchModeratedChannel channel in moddedChannels) {
-                User? user = db.Users.FirstOrDefault(u => u.TwitchId == channel.broadcaster_id);
-                if (null != user && user.TwitchUsername != channel.broadcaster_login) {
-                  user.TwitchUsername = channel.broadcaster_login;
-                  await db.SaveChangesAsync(stoppingToken).ConfigureAwait(false);
-                }
-              }
 
               // Join all the channels we've trimmed down.
               foreach (User channel in usersWithBotEnabled) {
