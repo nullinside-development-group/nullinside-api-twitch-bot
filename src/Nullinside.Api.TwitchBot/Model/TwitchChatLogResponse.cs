@@ -11,12 +11,18 @@ public class TwitchChatLogResponse {
   /// </summary>
   /// <param name="log">The log message.</param>
   public TwitchChatLogResponse(TwitchUserChatLogs log) {
+    Id = log.Id;
     Channel = log.Channel;
     TwitchId = log.TwitchId;
     TwitchUsername = log.TwitchUsername;
     Message = log.Message;
     Timestamp = log.Timestamp;
   }
+
+  /// <summary>
+  ///   The unique identifier of the chat log entry.
+  /// </summary>
+  public int Id { get; set; }
 
   /// <summary>
   ///   The channel the chat happened in.
