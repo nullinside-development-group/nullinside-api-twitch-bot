@@ -212,11 +212,10 @@ public class MainService : BackgroundService {
               // Trim channels we aren't a mod in. Why do we limit it to channels we are a mod in? Twitch changed
               // its chat limits so that "verified bots" like us don't get special treatment anymore. The only thing
               // that skips the chat limits is if it's a channel you're a mod in.
-              // IEnumerable<TwitchModeratedChannel> moddedChannels = await botApi.GetUserModChannels(Constants.BOT_ID).ConfigureAwait(false);
-              // TODO: When the twitch api is fixed we can re-enable this code. Currently there is a bug where twitch doesn't return all mod channels.
-              // usersWithBotEnabled = usersWithBotEnabled
-              //   .Where(u => moddedChannels.Select(m => m.broadcaster_id).Contains(u.TwitchId))
-              //   .ToList();
+              var moddedChannels = await botApi.GetUserModChannels(Constants.BOT_ID).ConfigureAwait(false);
+              usersWithBotEnabled = usersWithBotEnabled
+                .Where(u => moddedChannels.Select(m => m.broadcaster_id).Contains(u.TwitchId))
+                .ToList();
 
               // Join all the channels we've trimmed down.
               foreach (User channel in usersWithBotEnabled) {
