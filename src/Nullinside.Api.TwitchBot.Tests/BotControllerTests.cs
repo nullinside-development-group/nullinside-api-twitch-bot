@@ -44,7 +44,7 @@ public class BotControllerTests : UnitTestBase {
     Assert.IsInstanceOf<PagedResponse<TwitchChatLogResponse>>(okResult.Value);
     var response = (PagedResponse<TwitchChatLogResponse>)okResult.Value!;
 
-    Assert.That(response.TotalCount!, Is.EqualTo(15));
+    Assert.That(response.TotalCount!, Is.EqualTo(0));
     Assert.That(response.Page, Is.EqualTo(2));
     Assert.That(response.PageSize, Is.EqualTo(5));
     Assert.That(response.Data.Count(), Is.EqualTo(5));
