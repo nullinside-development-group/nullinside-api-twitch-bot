@@ -6,6 +6,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Storage;
 
 using Nullinside.Api.Common.Twitch;
+using Nullinside.Api.Common.Twitch.Json;
 using Nullinside.Api.Common.Twitch.Support;
 using Nullinside.Api.Model;
 using Nullinside.Api.Model.Ddl;
@@ -212,7 +213,8 @@ public class MainService : BackgroundService {
               // Trim channels we aren't a mod in. Why do we limit it to channels we are a mod in? Twitch changed
               // its chat limits so that "verified bots" like us don't get special treatment anymore. The only thing
               // that skips the chat limits is if it's a channel you're a mod in.
-              var moddedChannels = await botApi.GetUserModChannels(Constants.BOT_ID).ConfigureAwait(false);
+              List<TwitchModeratedChannel> moddedChannels = (await botApi.GetUserModChannels(Constants.BOT_ID).ConfigureAwait(false)).ToList();
+              await UpdateModeratorTable(db, moddedChannels, stoppingToken).ConfigureAwait(false);
               usersWithBotEnabled = usersWithBotEnabled
                 .Where(u => moddedChannels.Select(m => m.broadcaster_id).Contains(u.TwitchId))
                 .ToList();
@@ -293,6 +295,39 @@ public class MainService : BackgroundService {
       catch (Exception ex) {
         await transaction.RollbackAsync(stoppingToken).ConfigureAwait(false);
         _log.Error("Failed to update live users table", ex);
+        throw;
+      }
+    }).ConfigureAwait(false);
+  }
+
+  /// <summary>
+  ///   Update the list of users that are currently live.
+  /// </summary>
+  /// <param name="db">The database context.</param>
+  /// <param name="channels">The channels to add to the moderated table.</param>
+  /// <param name="stoppingToken">The token to cancel the operation.</param>
+  private async Task UpdateModeratorTable(INullinsideContext db, IEnumerable<TwitchModeratedChannel> channels, CancellationToken stoppingToken) {
+    await db.Database.CreateExecutionStrategy().ExecuteAsync(async () => {
+      await using IDbContextTransaction transaction = await db.Database.BeginTransactionAsync(stoppingToken).ConfigureAwait(false);
+      try {
+        await db.TwitchModeratedUser.ExecuteDeleteAsync(stoppingToken).ConfigureAwait(false);
+
+        List<TwitchModeratedUser> moderatedChannels = (
+            from c in channels
+            select new TwitchModeratedUser {
+              ChannelId = c.broadcaster_id,
+              ChannelName = c.broadcaster_name
+            }
+          )
+          .ToList();
+
+        await db.TwitchModeratedUser.AddRangeAsync(moderatedChannels, stoppingToken).ConfigureAwait(false);
+        await db.SaveChangesAsync(stoppingToken).ConfigureAwait(false);
+        await transaction.CommitAsync(stoppingToken).ConfigureAwait(false);
+      }
+      catch (Exception ex) {
+        await transaction.RollbackAsync(stoppingToken).ConfigureAwait(false);
+        _log.Error("Failed to update twitch moderated user table", ex);
         throw;
       }
     }).ConfigureAwait(false);
