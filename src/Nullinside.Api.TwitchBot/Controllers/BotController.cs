@@ -256,7 +256,7 @@ public class BotController : ControllerBase {
   [HttpGet("chat/admin")]
   [ProducesResponseType(StatusCodes.Status200OK)]
   public async Task<ObjectResult> GetAllChatLogs(int page = 1, int pageSize = 100, CancellationToken token = new()) {
-    int totalCount = await _dbContext.TwitchUserChatLogs.CountAsync(token).ConfigureAwait(false);
+    // int totalCount = await _dbContext.TwitchUserChatLogs.CountAsync(token).ConfigureAwait(false);
     List<TwitchUserChatLogs> logs = await _dbContext.TwitchUserChatLogs
       .OrderByDescending(c => c.Timestamp)
       .Skip((page - 1) * pageSize)
@@ -266,7 +266,7 @@ public class BotController : ControllerBase {
 
     return Ok(new PagedResponse<TwitchChatLogResponse> {
       Data = logs.Select(l => new TwitchChatLogResponse(l)).ToList(),
-      TotalCount = totalCount,
+      TotalCount = 0,
       Page = page,
       PageSize = pageSize
     });
