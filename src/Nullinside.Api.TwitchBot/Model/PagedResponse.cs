@@ -11,11 +11,6 @@ public class PagedResponse<T> {
   public IEnumerable<T> Data { get; set; } = [];
 
   /// <summary>
-  ///   The total number of items.
-  /// </summary>
-  public int TotalCount { get; set; }
-
-  /// <summary>
   ///   The current page.
   /// </summary>
   public int Page { get; set; }
