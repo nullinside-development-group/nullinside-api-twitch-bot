@@ -256,7 +256,6 @@ public class BotController : ControllerBase {
   [HttpGet("chat/admin")]
   [ProducesResponseType(StatusCodes.Status200OK)]
   public async Task<ObjectResult> GetAllChatLogs(int page = 1, int pageSize = 100, CancellationToken token = new()) {
-    // int totalCount = await _dbContext.TwitchUserChatLogs.CountAsync(token).ConfigureAwait(false);
     List<TwitchUserChatLogs> logs = await _dbContext.TwitchUserChatLogs
       .OrderByDescending(c => c.Timestamp)
       .Skip((page - 1) * pageSize)
@@ -266,7 +265,6 @@ public class BotController : ControllerBase {
 
     return Ok(new PagedResponse<TwitchChatLogResponse> {
       Data = logs.Select(l => new TwitchChatLogResponse(l)).ToList(),
-      TotalCount = 0,
       Page = page,
       PageSize = pageSize
     });
@@ -279,10 +277,6 @@ public class BotController : ControllerBase {
   [HttpGet("bans/admin")]
   [ProducesResponseType(StatusCodes.Status200OK)]
   public async Task<ObjectResult> GetAllBans(int page = 1, int pageSize = 20, CancellationToken token = new()) {
-    int totalCount = await _dbContext.TwitchBan
-      .CountAsync(token)
-      .ConfigureAwait(false);
-
     var recentBans = await (
         from u in _dbContext.TwitchUser
         join b in _dbContext.TwitchBan
@@ -334,7 +328,6 @@ public class BotController : ControllerBase {
       ) {
         TwitchId = ban.TwitchId
       }).ToList(),
-      TotalCount = totalCount,
       Page = page,
       PageSize = pageSize
     });
