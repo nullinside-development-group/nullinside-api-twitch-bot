@@ -143,24 +143,6 @@ public class BotController : ControllerBase {
   }
 
   /// <summary>
-  ///   Gets the timestamp of the last time a chat message was received.
-  /// </summary>
-  /// <param name="token">The cancellation token.</param>
-  /// <returns>The timestamp of the last message received.</returns>
-  [AllowAnonymous]
-  [HttpGet]
-  [Route("chat/timestamp")]
-  public async Task<IActionResult> GetLastChatTimestamp(CancellationToken token) {
-    TwitchUserChatLogs? message =
-      await _dbContext.TwitchUserChatLogs.OrderByDescending(c => c.Timestamp).FirstOrDefaultAsync(token).ConfigureAwait(false);
-    if (null == message) {
-      return StatusCode(500);
-    }
-
-    return Ok(message.Timestamp);
-  }
-
-  /// <summary>
   ///   Updates the configuration.
   /// </summary>
   /// <param name="configResponse">The configuration to apply for the user.</param>
@@ -195,6 +177,24 @@ public class BotController : ControllerBase {
 
     await _dbContext.SaveChangesAsync(token).ConfigureAwait(false);
     return Ok(configResponse);
+  }
+
+  /// <summary>
+  ///   Gets the timestamp of the last time a chat message was received for all live channels.
+  /// </summary>
+  /// <param name="token">The cancellation token.</param>
+  /// <returns>The timestamp of the last message received.</returns>
+  [AllowAnonymous]
+  [HttpGet]
+  [Route("chat/timestamp")]
+  public async Task<IActionResult> GetLastChatTimestamp(CancellationToken token) {
+    TwitchUserChatLogs? message =
+      await _dbContext.TwitchUserChatLogs.OrderByDescending(c => c.Timestamp).FirstOrDefaultAsync(token).ConfigureAwait(false);
+    if (null == message) {
+      return StatusCode(500);
+    }
+
+    return Ok(message.Timestamp);
   }
 
   /// <summary>
@@ -268,6 +268,27 @@ public class BotController : ControllerBase {
       Page = page,
       PageSize = pageSize
     });
+  }
+
+  /// <summary>
+  ///   Gets time since last chat.
+  /// </summary>
+  [Authorize(nameof(UserRoles.ADMIN))]
+  [HttpGet("chat/timeSince")]
+  [ProducesResponseType(StatusCodes.Status200OK)]
+  public async Task<ObjectResult> GetTimeSinceChatForLiveChannels(CancellationToken token = new()) {
+    List<TwitchChatTimeSinceResponse> latestMessages = await (
+        from live in _dbContext.TwitchUserLive
+        join chat in _dbContext.TwitchUserChatLogs
+          on live.User.TwitchUsername equals chat.Channel
+        group chat by live.User.TwitchUsername
+        into chats
+        select new TwitchChatTimeSinceResponse(chats.Key, chats.Max(chat => chat.Timestamp))
+      )
+      .ToListAsync(token)
+      .ConfigureAwait(false);
+
+    return Ok(latestMessages);
   }
 
   /// <summary>
