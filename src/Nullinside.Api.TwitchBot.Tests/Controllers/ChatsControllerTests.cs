@@ -7,18 +7,18 @@ using Nullinside.Api.Model.Ddl;
 using Nullinside.Api.TwitchBot.Controllers;
 using Nullinside.Api.TwitchBot.Model;
 
-namespace Nullinside.Api.TwitchBot.Tests;
+namespace Nullinside.Api.TwitchBot.Tests.Controllers;
 
 [TestFixture]
-public class BotControllerTests : UnitTestBase {
+public class ChatsControllerTests : UnitTestBase {
   [SetUp]
   public override void Setup() {
     base.Setup();
     _configurationMock = new Mock<IConfiguration>();
-    _controller = new BotController(_db, _configurationMock.Object);
+    _controller = new ChatsController(_db);
   }
 
-  private BotController _controller;
+  private ChatsController _controller;
   private Mock<IConfiguration> _configurationMock;
 
   [Test]
@@ -36,7 +36,7 @@ public class BotControllerTests : UnitTestBase {
     await _db.SaveChangesAsync().ConfigureAwait(false);
 
     // Act
-    ObjectResult result = await _controller.GetAllChatLogs(2, 5).ConfigureAwait(false);
+    ObjectResult result = await _controller.GetAllChatLogs(null, 2, 5).ConfigureAwait(false);
 
     // Assert
     Assert.IsInstanceOf<OkObjectResult>(result);

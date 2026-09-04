@@ -19,7 +19,7 @@ using TwitchLib.Api.Helix.Models.Users.GetUsers;
 namespace Nullinside.Api.TwitchBot.Controllers;
 
 /// <summary>
-///   Provides search capabilities through IMDB public database information.
+///   Manages 3rd party login and authentication.
 /// </summary>
 [ApiController]
 [Route("[controller]")]
