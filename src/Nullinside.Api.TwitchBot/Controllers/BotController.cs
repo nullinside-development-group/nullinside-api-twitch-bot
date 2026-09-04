@@ -1,8 +1,6 @@
 using System.Security.Claims;
 using System.Text.RegularExpressions;
 
-using log4net;
-
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -24,19 +22,9 @@ namespace Nullinside.Api.TwitchBot.Controllers;
 [Route("[controller]")]
 public class BotController : ControllerBase {
   /// <summary>
-  ///   The application's configuration file.
-  /// </summary>
-  private readonly IConfiguration _configuration;
-
-  /// <summary>
   ///   The nullinside api database.
   /// </summary>
   private readonly INullinsideContext _dbContext;
-
-  /// <summary>
-  ///   The logger.
-  /// </summary>
-  private readonly ILog _log = LogManager.GetLogger(typeof(BotController));
 
   /// <summary>
   ///   Regex to find username @ mentions in the chat logs.
@@ -48,10 +36,8 @@ public class BotController : ControllerBase {
   ///   Initializes a new instance of the <see cref="LoginController" /> class.
   /// </summary>
   /// <param name="dbContext">The nullinside database.</param>
-  /// <param name="configuration">The application's configuration.</param>
-  public BotController(INullinsideContext dbContext, IConfiguration configuration) {
+  public BotController(INullinsideContext dbContext) {
     _dbContext = dbContext;
-    _configuration = configuration;
   }
 
   /// <summary>
@@ -88,7 +74,7 @@ public class BotController : ControllerBase {
   /// <param name="api">The twitch api.</param>
   /// <param name="token">The cancellation token.</param>
   /// <returns>True if they are a mod, false otherwise.</returns>
-  [HttpPost]
+  [HttpPut]
   [Route("mod")]
   public async Task<IActionResult> ModBotAccount([FromServices] ITwitchApiProxy api, CancellationToken token) {
     Claim? userId = HttpContext.User.Claims.FirstOrDefault(c => c.Type == ClaimTypes.UserData);
@@ -104,7 +90,15 @@ public class BotController : ControllerBase {
 
     api.Configure(user);
     bool success = await api.AddChannelMod(user.TwitchId, Constants.BOT_ID, token).ConfigureAwait(false);
-    return Ok(success);
+    if (success) {
+      return NoContent();
+    }
+
+    return Problem(
+      title: "Failed to add bot account as moderator",
+      detail: "The bot account could not be added as a moderator for the channel.",
+      statusCode: StatusCodes.Status500InternalServerError
+    );
   }
 
   /// <summary>
@@ -148,7 +142,7 @@ public class BotController : ControllerBase {
   /// <param name="configResponse">The configuration to apply for the user.</param>
   /// <param name="token">The cancellation token.</param>
   /// <returns>True if they are a mod, false otherwise.</returns>
-  [HttpPost]
+  [HttpPut]
   [Route("config")]
   public async Task<IActionResult> SetConfig(TwitchUserConfigResponse configResponse, CancellationToken token) {
     Claim? userIdClaim = HttpContext.User.Claims.FirstOrDefault(c => c.Type == ClaimTypes.UserData);
