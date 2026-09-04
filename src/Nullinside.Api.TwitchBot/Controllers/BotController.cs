@@ -252,11 +252,21 @@ public class BotController : ControllerBase {
   /// <summary>
   ///   Gets all chat logs from the database.
   /// </summary>
+  /// <param name="page">The page number to pull, 1 based.</param>
+  /// <param name="pageSize">The page size to pull.</param>
+  /// <param name="channel">Optionally, the channel to get chat logs from.</param>
+  /// <param name="token">The cancellation token.</param>
+  /// <returns>Twitch chat logs.</returns>
   [Authorize(nameof(UserRoles.ADMIN))]
   [HttpGet("chat/admin")]
   [ProducesResponseType(StatusCodes.Status200OK)]
-  public async Task<ObjectResult> GetAllChatLogs(int page = 1, int pageSize = 100, CancellationToken token = new()) {
-    List<TwitchUserChatLogs> logs = await _dbContext.TwitchUserChatLogs
+  public async Task<ObjectResult> GetAllChatLogs(int page = 1, int pageSize = 100, string? channel = null, CancellationToken token = new()) {
+    IQueryable<TwitchUserChatLogs> query = _dbContext.TwitchUserChatLogs.AsQueryable();
+    if (null != channel) {
+      query = query.Where(c => c.Channel == channel);
+    }
+
+    List<TwitchUserChatLogs> logs = await query
       .OrderByDescending(c => c.Timestamp)
       .Skip((page - 1) * pageSize)
       .Take(pageSize)
