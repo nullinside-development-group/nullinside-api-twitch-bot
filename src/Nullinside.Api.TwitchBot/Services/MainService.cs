@@ -325,6 +325,11 @@ public class MainService : BackgroundService {
         await db.SaveChangesAsync(stoppingToken).ConfigureAwait(false);
         await transaction.CommitAsync(stoppingToken).ConfigureAwait(false);
       }
+      catch (OperationCanceledException) when (stoppingToken.IsCancellationRequested) {
+        // Expected when the application is shutting down.
+        _log.Info("Updating Twitch moderated users was cancelled during shutdown.");
+        throw;
+      }
       catch (Exception ex) {
         await transaction.RollbackAsync(stoppingToken).ConfigureAwait(false);
         _log.Error("Failed to update twitch moderated user table", ex);
