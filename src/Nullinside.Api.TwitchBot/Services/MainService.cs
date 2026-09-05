@@ -96,7 +96,8 @@ public class MainService : BackgroundService {
   ///   Initializes a new instance of the <see cref="MainService" /> class.
   /// </summary>
   /// <param name="serviceScopeFactory">The service scope factory.</param>
-  public MainService(IServiceScopeFactory serviceScopeFactory) {
+  /// <param name="appLifetime">The application lifetime.</param>
+  public MainService(IServiceScopeFactory serviceScopeFactory, IHostApplicationLifetime appLifetime) {
     _serviceScopeFactory = serviceScopeFactory;
     _scope = _serviceScopeFactory.CreateScope();
     _db = _scope.ServiceProvider.GetRequiredService<INullinsideContext>();
@@ -104,6 +105,10 @@ public class MainService : BackgroundService {
     _client = _scope.ServiceProvider.GetRequiredService<ITwitchClientProxy>();
     _client.AddDisconnectedCallback(OnTwitchClientDisconected);
     _chatMessageConsumer = new TwitchChatMessageMonitorConsumer(_db, _api, _receivedMessageProcessingQueue);
+
+    appLifetime.ApplicationStopping.Register(() => {
+      _log.Warn($"Host application stopping triggered!\nStack trace:\n{Environment.StackTrace}");
+    });
   }
 
   /// <summary>
@@ -238,18 +243,17 @@ public class MainService : BackgroundService {
             }
 
             // Spawn 5 workers to process all the live user's channels.
-            Parallel.ForEach(usersWithBotEnabled, new ParallelOptions { MaxDegreeOfParallelism = 5 }, async user => {
+            await Parallel.ForEachAsync(usersWithBotEnabled, new ParallelOptions { MaxDegreeOfParallelism = 5, CancellationToken = stoppingToken }, async (user, ct) => {
               try {
-                await DoScan(user, botUser, stoppingToken).ConfigureAwait(false);
+                await DoScan(user, botUser, ct).ConfigureAwait(false);
               }
-              catch (OperationCanceledException) when (stoppingToken.IsCancellationRequested) {
-                // Normal shutdown.
-                throw;
+              catch (OperationCanceledException) when (ct.IsCancellationRequested) {
+                // Normal cancellation
               }
               catch (Exception ex) {
                 _log.Error($"Scan failed for {user.TwitchUsername}", ex);
               }
-            });
+            }).ConfigureAwait(false);
           }
         }
 
