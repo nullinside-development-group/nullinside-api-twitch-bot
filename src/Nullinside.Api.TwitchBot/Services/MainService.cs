@@ -139,6 +139,10 @@ public class MainService : BackgroundService {
 
           await Main(stoppingToken).ConfigureAwait(false);
         }
+        catch (OperationCanceledException) when (stoppingToken.IsCancellationRequested) {
+          // Normal shutdown.
+          throw;
+        }
         catch (Exception ex) {
           _log.Error("Main Failed", ex);
           await Task.Delay(TimeSpan.FromSeconds(10), stoppingToken).ConfigureAwait(false);
