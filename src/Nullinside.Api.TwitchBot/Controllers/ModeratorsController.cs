@@ -1,5 +1,3 @@
-using System.Security.Claims;
-
 using Microsoft.AspNetCore.Mvc;
 
 using Nullinside.Api.Common.Twitch;
@@ -39,12 +37,7 @@ public class ModeratorsController : ControllerBase {
   [HttpGet]
   [Route("bot")]
   public async Task<IActionResult> IsMod([FromServices] ITwitchApiProxy api, CancellationToken token = new()) {
-    Claim? userId = HttpContext.User.Claims.FirstOrDefault(c => c.Type == ClaimTypes.UserData);
-    if (null == userId) {
-      return Unauthorized();
-    }
-
-    User? user = _dbContext.Users.FirstOrDefault(u => u.Id == int.Parse(userId.Value) && !u.IsBanned);
+    User? user = await this.GetUserEntity(_dbContext, token).ConfigureAwait(false);
     if (null == user || null == user.TwitchToken || null == user.TwitchRefreshToken ||
         null == user.TwitchTokenExpiration || null == user.TwitchId) {
       return Unauthorized();
@@ -69,12 +62,7 @@ public class ModeratorsController : ControllerBase {
   [HttpPut]
   [Route("bot")]
   public async Task<IActionResult> ModBotAccount([FromServices] ITwitchApiProxy api, CancellationToken token) {
-    Claim? userId = HttpContext.User.Claims.FirstOrDefault(c => c.Type == ClaimTypes.UserData);
-    if (null == userId) {
-      return Unauthorized();
-    }
-
-    User? user = _dbContext.Users.FirstOrDefault(u => u.Id == int.Parse(userId.Value) && !u.IsBanned);
+    User? user = await this.GetUserEntity(_dbContext, token).ConfigureAwait(false);
     if (null == user || null == user.TwitchToken || null == user.TwitchRefreshToken ||
         null == user.TwitchTokenExpiration || null == user.TwitchId) {
       return Unauthorized();

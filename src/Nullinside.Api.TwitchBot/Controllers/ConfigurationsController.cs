@@ -1,5 +1,3 @@
-using System.Security.Claims;
-
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 
@@ -35,12 +33,7 @@ public class ConfigurationsController : ControllerBase {
   /// <returns>The bot's configuration.</returns>
   [HttpGet("me")]
   public async Task<IActionResult> GetConfig(CancellationToken token) {
-    Claim? userId = HttpContext.User.Claims.FirstOrDefault(c => c.Type == ClaimTypes.UserData);
-    if (null == userId) {
-      return Unauthorized();
-    }
-
-    User? user = await _dbContext.Users.FirstOrDefaultAsync(u => u.Id == int.Parse(userId.Value) && !u.IsBanned, token).ConfigureAwait(false);
+    User? user = await this.GetUserEntity(_dbContext, token).ConfigureAwait(false);
     if (null == user) {
       return Unauthorized();
     }
@@ -70,20 +63,20 @@ public class ConfigurationsController : ControllerBase {
   /// <returns>The updated configuration.</returns>
   [HttpPut("me")]
   public async Task<IActionResult> SetConfig(TwitchUserConfigResponse configResponse, CancellationToken token) {
-    Claim? userIdClaim = HttpContext.User.Claims.FirstOrDefault(c => c.Type == ClaimTypes.UserData);
-    if (null == userIdClaim) {
+    int? userId = this.GetUserId();
+    if (null == userId) {
       return Unauthorized();
     }
 
-    int userId = int.Parse(userIdClaim.Value);
-    TwitchUserConfig? configDb =
-      await _dbContext.TwitchUserConfig.FirstOrDefaultAsync(c => c.UserId == userId, token).ConfigureAwait(false);
+    TwitchUserConfig? configDb = await _dbContext.TwitchUserConfig
+      .FirstOrDefaultAsync(c => c.UserId == userId, token)
+      .ConfigureAwait(false);
     if (null == configDb) {
       await _dbContext.TwitchUserConfig.AddAsync(new TwitchUserConfig {
         BanKnownBots = configResponse.BanKnownBots,
         Enabled = configResponse.IsEnabled,
         ShowOnHomePage = configResponse.ShowOnHomePage,
-        UserId = userId,
+        UserId = userId.Value,
         UpdatedOn = DateTime.UtcNow
       }, token).ConfigureAwait(false);
     }

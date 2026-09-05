@@ -1,5 +1,3 @@
-using System.Security.Claims;
-
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -58,12 +56,7 @@ public class ChatsController : ControllerBase {
   [HttpGet("me")]
   [ProducesResponseType(StatusCodes.Status200OK)]
   public async Task<ObjectResult> GetChatLogs(int page = 1, int pageSize = 100, CancellationToken token = new()) {
-    string? authenticatedUserId = HttpContext.User.Claims.FirstOrDefault(c => c.Type == ClaimTypes.UserData)?.Value;
-    if (null == authenticatedUserId || !int.TryParse(authenticatedUserId, out int userId)) {
-      return Unauthorized(false);
-    }
-
-    User? user = await _dbContext.Users.FirstOrDefaultAsync(u => u.Id == userId, token).ConfigureAwait(false);
+    User? user = await this.GetUserEntity(_dbContext, token).ConfigureAwait(false);
     if (null == user) {
       return Unauthorized(false);
     }
