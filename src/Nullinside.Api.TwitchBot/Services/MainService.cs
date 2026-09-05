@@ -238,6 +238,10 @@ public class MainService : BackgroundService {
               try {
                 await DoScan(user, botUser, stoppingToken).ConfigureAwait(false);
               }
+              catch (OperationCanceledException) when (stoppingToken.IsCancellationRequested) {
+                // Normal shutdown.
+                throw;
+              }
               catch (Exception ex) {
                 _log.Error($"Scan failed for {user.TwitchUsername}", ex);
               }
@@ -248,6 +252,10 @@ public class MainService : BackgroundService {
         // Wait between scans. We don't want to spam the API too much.
         await Task.Delay(SCAN_LOOP_DELAY_MILLISECONDS, stoppingToken).ConfigureAwait(false);
       }
+    }
+    catch (OperationCanceledException) when (stoppingToken.IsCancellationRequested) {
+      // Normal shutdown.
+      throw;
     }
     catch (Exception ex) {
       _log.Error("Main Inner failed", ex);
